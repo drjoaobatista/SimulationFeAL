@@ -1,4 +1,4 @@
-#!/usr/bin/env python 
+#!/usr/bin/env python
 #*-* coding: utf-8 *-*
 # na v2 o programa roda a simulação num largo espectro encontra o tc depois roda o histograma e encontra o tc mais preciso.
 # para v3  fazer o processo de encontrar tc com o histrograma ser "interativo" para diferentes amostras. ok
@@ -38,7 +38,12 @@
 #rodar no win
 
 # importa bibliotecas
+import sys
+#sys.path.insert(0, "/Programa/ising.so")
+sys.path.append("Programa")
+print(sys.path)
 import ising
+from ising import isingbcc
 import Histogram
 import numpy as np
 import matplotlib.pyplot as plt
