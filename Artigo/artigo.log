@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=pdflatex 2018.11.20)  9 JAN 2019 00:28
+This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=pdflatex 2018.11.20)  11 FEB 2019 19:43
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -7,8 +7,89 @@ entering extended mode
 (./artigo.tex
 LaTeX2e <2017-04-15>
 Babel <3.18> and hyphenation patterns for 10 language(s) loaded.
+
+./artigo.tex:1: LaTeX Error: Missing \begin{document}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.1 h
+     ttps://github.com/atom/spell-check#spell-check-package-%\documentclass[...
+
+You're in trouble here.  Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+Missing character: There is no h in font nullfont!
+Missing character: There is no t in font nullfont!
+Missing character: There is no t in font nullfont!
+Missing character: There is no p in font nullfont!
+Missing character: There is no s in font nullfont!
+Missing character: There is no : in font nullfont!
+Missing character: There is no / in font nullfont!
+Missing character: There is no / in font nullfont!
+Missing character: There is no g in font nullfont!
+Missing character: There is no i in font nullfont!
+Missing character: There is no t in font nullfont!
+Missing character: There is no h in font nullfont!
+Missing character: There is no u in font nullfont!
+Missing character: There is no b in font nullfont!
+Missing character: There is no . in font nullfont!
+Missing character: There is no c in font nullfont!
+Missing character: There is no o in font nullfont!
+Missing character: There is no m in font nullfont!
+Missing character: There is no / in font nullfont!
+Missing character: There is no a in font nullfont!
+Missing character: There is no t in font nullfont!
+Missing character: There is no o in font nullfont!
+Missing character: There is no m in font nullfont!
+Missing character: There is no / in font nullfont!
+Missing character: There is no s in font nullfont!
+Missing character: There is no p in font nullfont!
+Missing character: There is no e in font nullfont!
+Missing character: There is no l in font nullfont!
+Missing character: There is no l in font nullfont!
+Missing character: There is no - in font nullfont!
+Missing character: There is no c in font nullfont!
+Missing character: There is no h in font nullfont!
+Missing character: There is no e in font nullfont!
+Missing character: There is no c in font nullfont!
+Missing character: There is no k in font nullfont!
+./artigo.tex:1: You can't use `macro parameter character #' in horizontal mode.
+l.1 https://github.com/atom/spell-check#
+                                        spell-check-package-%\documentclass[...
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+Missing character: There is no s in font nullfont!
+Missing character: There is no p in font nullfont!
+Missing character: There is no e in font nullfont!
+Missing character: There is no l in font nullfont!
+Missing character: There is no l in font nullfont!
+Missing character: There is no - in font nullfont!
+Missing character: There is no c in font nullfont!
+Missing character: There is no h in font nullfont!
+Missing character: There is no e in font nullfont!
+Missing character: There is no c in font nullfont!
+Missing character: There is no k in font nullfont!
+Missing character: There is no - in font nullfont!
+Missing character: There is no p in font nullfont!
+Missing character: There is no a in font nullfont!
+Missing character: There is no c in font nullfont!
+Missing character: There is no k in font nullfont!
+Missing character: There is no a in font nullfont!
+Missing character: There is no g in font nullfont!
+Missing character: There is no e in font nullfont!
+Missing character: There is no - in font nullfont!
 (/usr/share/texlive/texmf-dist/tex/latex/elsarticle/elsarticle.cls
 Document Class: elsarticle 2009/09/17, 1.2.0: Elsevier Ltd
+
+Overfull \hbox (20.0pt too wide) in paragraph at lines 1--39
+[]
+ []
+
 \@bls=\dimen102
 (/usr/share/texlive/texmf-dist/tex/latex/base/article.cls
 Document Class: article 2014/09/29 v1.4h Standard LaTeX document class
@@ -26,7 +107,9 @@ File: size12.clo 2014/09/29 v1.4h Standard LaTeX file (size option)
 \abovecaptionskip=\skip41
 \belowcaptionskip=\skip42
 \bibindent=\dimen103
-)
+ [1
+
+{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}])
 (/usr/share/texlive/texmf-dist/tex/latex/graphics/graphicx.sty
 Package: graphicx 2017/06/01 v1.1a Enhanced LaTeX Graphics (DPC,SPQR)
 
@@ -479,12 +562,12 @@ LaTeX Font Info:    Try loading font information for U+msb on input line 46.
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 )
 
-Package natbib Warning: Citation `x' on page 1 undefined on input line 58.
+Package natbib Warning: Citation `x' on page 2 undefined on input line 58.
 
 
-Package natbib Warning: Citation `x1' on page 1 undefined on input line 58.
+Package natbib Warning: Citation `x1' on page 2 undefined on input line 58.
 
-[1{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}
+[2
 
 
 ]
@@ -514,7 +597,7 @@ Package epstopdf Info: Source file: <fig1a.eps>
  fig1a.eps>
 (epstopdf)             \includegraphics on input line 86.
 Package epstopdf Info: Output file is already uptodate.
-<fig1a-eps-converted-to.pdf, id=81, 364.36125pt x 309.155pt>
+<fig1a-eps-converted-to.pdf, id=84, 364.36125pt x 309.155pt>
 File: fig1a-eps-converted-to.pdf Graphic file (type pdf)
 <use fig1a-eps-converted-to.pdf>
 Package pdftex.def Info: fig1a-eps-converted-to.pdf  used on input line 86.
@@ -529,7 +612,7 @@ Package epstopdf Info: Source file: <fig1b.eps>
  fig1b.eps>
 (epstopdf)             \includegraphics on input line 92.
 Package epstopdf Info: Output file is already uptodate.
-<fig1b-eps-converted-to.pdf, id=82, 364.36125pt x 309.155pt>
+<fig1b-eps-converted-to.pdf, id=85, 364.36125pt x 309.155pt>
 File: fig1b-eps-converted-to.pdf Graphic file (type pdf)
 <use fig1b-eps-converted-to.pdf>
 Package pdftex.def Info: fig1b-eps-converted-to.pdf  used on input line 92.
@@ -539,7 +622,7 @@ Underfull \hbox (badness 2671) in paragraph at lines 99--101
 []\OT1/cmr/m/n/12 The above Hamil-to-nian has been stud-ied
  []
 
-[2 <./fig1a-eps-converted-to.pdf> <./fig1b-eps-converted-to.pdf>]
+[3 <./fig1a-eps-converted-to.pdf> <./fig1b-eps-converted-to.pdf>]
 Package epstopdf Info: Source file: <fig1.eps>
 (epstopdf)                    date: 2017-09-21 15:57:58
 (epstopdf)                    size: 13359211 bytes
@@ -550,7 +633,7 @@ Package epstopdf Info: Source file: <fig1.eps>
 fig1.eps>
 (epstopdf)             \includegraphics on input line 134.
 Package epstopdf Info: Output file is already uptodate.
-<fig1-eps-converted-to.pdf, id=324, 684.5575pt x 496.85625pt>
+<fig1-eps-converted-to.pdf, id=327, 684.5575pt x 496.85625pt>
 File: fig1-eps-converted-to.pdf Graphic file (type pdf)
 <use fig1-eps-converted-to.pdf>
 Package pdftex.def Info: fig1-eps-converted-to.pdf  used on input line 134.
@@ -569,12 +652,12 @@ Package epstopdf Info: Output file is already uptodate.
 
 pdfTeX warning: pdflatex (file ./fig2-eps-converted-to.pdf): PDF inclusion: fou
 nd PDF version <1.7>, but at most version <1.5> allowed
-<fig2-eps-converted-to.pdf, id=326, 709.65125pt x 517.935pt>
+<fig2-eps-converted-to.pdf, id=329, 709.65125pt x 517.935pt>
 File: fig2-eps-converted-to.pdf Graphic file (type pdf)
 <use fig2-eps-converted-to.pdf>
 Package pdftex.def Info: fig2-eps-converted-to.pdf  used on input line 143.
 (pdftex.def)             Requested size: 210.55022pt x 153.66673pt.
-[3 <./fig1-eps-converted-to.pdf>]
+[4 <./fig1-eps-converted-to.pdf>]
 Package epstopdf Info: Source file: <fig3.eps>
 (epstopdf)                    date: 2017-09-23 14:45:16
 (epstopdf)                    size: 31099 bytes
@@ -585,7 +668,7 @@ Package epstopdf Info: Source file: <fig3.eps>
 fig3.eps>
 (epstopdf)             \includegraphics on input line 154.
 Package epstopdf Info: Output file is already uptodate.
-<fig3-eps-converted-to.pdf, id=348, 728.7225pt x 490.83376pt>
+<fig3-eps-converted-to.pdf, id=351, 728.7225pt x 490.83376pt>
 File: fig3-eps-converted-to.pdf Graphic file (type pdf)
 <use fig3-eps-converted-to.pdf>
 Package pdftex.def Info: fig3-eps-converted-to.pdf  used on input line 154.
@@ -595,13 +678,13 @@ Missing character: There is no € in font cmr10!
 Missing character: There is no “ in font cmr10!
 
 
-LaTeX Warning: Reference `x,x,x' on page 4 undefined on input line 155.
+LaTeX Warning: Reference `x,x,x' on page 5 undefined on input line 155.
 
 Missing character: There is no â in font cmr10!
 Missing character: There is no € in font cmr10!
 Missing character: There is no “ in font cmr10!
 
-LaTeX Warning: Reference `x,x,x' on page 4 undefined on input line 155.
+LaTeX Warning: Reference `x,x,x' on page 5 undefined on input line 155.
 
 Missing character: There is no â in font cmr10!
 Missing character: There is no € in font cmr10!
@@ -659,12 +742,12 @@ Missing character: There is no ’ in font cmr10!
 
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
- [4 <./fig2-eps-converted-to.pdf> <./fig3-eps-converted-to.pdf>]
+ [5 <./fig2-eps-converted-to.pdf> <./fig3-eps-converted-to.pdf>]
 
 Package natbib Warning: There were undefined citations.
 
 Package atveryend Info: Empty hook `BeforeClearDocument' on input line 193.
-[5
+[6
 
 ]
 Package atveryend Info: Empty hook `AfterLastShipout' on input line 193.
@@ -677,12 +760,15 @@ Package rerunfilecheck Info: File `artigo.out' has not changed.
 
 LaTeX Warning: There were undefined references.
 
+
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+
 Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 193.
  ) 
 Here is how much of TeX's memory you used:
  7917 strings out of 494789
  111741 string characters out of 6177363
- 215922 words of memory out of 5000000
+ 216916 words of memory out of 5000000
  11074 multiletter control sequences out of 15000+600000
  17541 words of font info for 64 fonts, out of 8000000 for 9000
  83 hyphenation exceptions out of 8191
@@ -705,10 +791,10 @@ texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/share/texlive/texmf-d
 ist/fonts/type1/public/amsfonts/cm/cmti10.pfb></usr/share/texlive/texmf-dist/fo
 nts/type1/public/amsfonts/cm/cmti12.pfb></usr/share/texlive/texmf-dist/fonts/ty
 pe1/public/amsfonts/cm/cmti7.pfb>
-Output written on artigo.pdf (5 pages, 5861544 bytes).
+Output written on artigo.pdf (6 pages, 5862052 bytes).
 PDF statistics:
- 458 PDF objects out of 1000 (max. 8388607)
- 203 compressed objects within 3 object streams
+ 461 PDF objects out of 1000 (max. 8388607)
+ 205 compressed objects within 3 object streams
  45 named destinations out of 1000 (max. 500000)
  58 words of extra memory for PDF output out of 10000 (max. 10000000)
 
