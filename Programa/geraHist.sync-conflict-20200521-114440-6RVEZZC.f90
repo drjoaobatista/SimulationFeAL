@@ -7,7 +7,7 @@ subroutine BCC(hist, parametroOrdem, MCx, MCc, Mct, L, A, B, t0, q)
     save  
     !saidas
     real(8), intent(out),dimension(0:Mcc-1,0:3):: hist
-    !f2py intent(out) :: hist                               
+    !f2py intent(out) :: hist       
     real(8), intent(out),dimension(0:Mct-1):: parametroOrdem
     !f2py intent(out) :: parametroOrdem       
     !entradas 
@@ -87,7 +87,7 @@ subroutine BCC(hist, parametroOrdem, MCx, MCc, Mct, L, A, B, t0, q)
         parametroOrdem(passo2)=ordemA()
         call trocaAlFe    
     end do
-                                            S
+    
     !repetições para media
     do passo2=0, MCt-1
         do passo = 0, int(MCc/MCt)-1
