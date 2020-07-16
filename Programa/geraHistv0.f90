@@ -1,32 +1,26 @@
 !  Copyright 2014 Joao Batista dos Santos Filho <joao@jbsantosfilho.com>
-!f2py3 -c geraHist.f90 -m geraHist
-!#OK : incluiro o parametro odem na saida ok
-!#TODO incluir amostra como parametro de entrada e saida se amostra form zero gerar amosta aleatoria se não contimua  
-subroutine BCC(hist, parametroOrdem, MCx, MCc, Mct, L, A,t0, q)
+
+subroutine BCC(hist, MCx, MCc,L, A,t0,p, Clusterlimite)
     implicit none
     save  
     !saidas
     real(8), intent(out),dimension(0:Mcc-1,0:3):: hist
     !f2py intent(out) :: hist       
-    real(8), intent(out),dimension(0:Mct-1):: parametroOrdem
-    !f2py intent(out) :: parametroOrdem       
     !entradas 
-    integer, intent(in)::L, MCx, MCc, MCt 
+    integer, intent(in)::L, MCx, MCc ! para que tamanho de agloreado exixte j2
     !f2py intent(in) ::L, MCx, MCc
 
-    real(8), intent(in)::A,t0, q   !q=0 sistema puro
-    !f2py intent(in) :: A,t0, q
+    real(8), intent(in)::A,t0, p   !p=0 sistema puro
+    !f2py intent(in) :: A,t0, p
     
     type :: Spin
-        real, dimension(1:3) :: s !mudei de double precision para real 
+        double precision, dimension(1:3) :: s
         integer :: s2
     end type Spin
     
     type :: Quantidades
         double precision,dimension(1:3) :: magnetizacao !magnetização instantanea
         double precision :: energia !Energia instantanea
-        double precision :: energia2 !Energia instantanea
-        double precision :: ordemA !Energia instantanea
     end type Quantidades
 
     type :: Configuracao
@@ -35,8 +29,6 @@ subroutine BCC(hist, parametroOrdem, MCx, MCc, Mct, L, A,t0, q)
         integer :: numeroSitios
         integer :: numeroTermalizacao
         integer :: numeroPassosMC
-        integer :: numeroTentativas
-        integer :: numeroVacancias
     end type Configuracao
    
     type :: Disco  !usado para construir a pilha 
@@ -53,9 +45,7 @@ subroutine BCC(hist, parametroOrdem, MCx, MCc, Mct, L, A,t0, q)
     type(Quantidades) :: quantidadesTermodinamicas
     type(Configuracao) :: sistema 
     integer, dimension(:,:), allocatable :: vizinhos
-    real, dimension(:,:), allocatable :: ligacao, ligacao2
-    integer,  dimension(:), allocatable ::  zeros
-    real, dimension(1:3) :: campoEfetivo0
+    real, dimension(:,:), allocatable :: ligacao
     real :: rando
     integer :: passo
 
@@ -65,34 +55,24 @@ subroutine BCC(hist, parametroOrdem, MCx, MCc, Mct, L, A,t0, q)
    
     !inicilização das variaveis 
     allocate(rede(0:sistema%numeroSitios-1))
-    allocate(zeros(0:int(sistema%numeroSitios*q)-1))
     allocate(pilha(1:sistema%numeroSitios)) !usa no wollf e precisa comecar do 1
     allocate(vizinhos(0:sistema%numeroCoordenacao-1, 0:sistema%numeroSitios-1))
     allocate(ligacao(0:sistema%numeroCoordenacao-1,0:sistema%numeroSitios-1))
-    allocate(ligacao2(0:sistema%numeroCoordenacao-1,0:sistema%numeroSitios-1))
-
-       
+   
+    rede=Spin((/1,0,0/),1)
     call init_random_seed()   
    ! call random_seed(PUT=seed)
     call marcarVizinhos
     call diluir !gera amostra 
     call marcaLigacao     
     call inicializar 
-    
-    do passo = 0, MCx-1
+    do passo = 0, sistema%numeroTermalizacao-1
         call metropolis
         call wolff
-        call superrelaxacao
+        call superrelaxacao    
     end do 
-    do passo = 0, MCt-1
-        call metropolis
-        call wolff
-        call superrelaxacao
-        parametroOrdem(passo)=ordemA()
-        call trocaAlFe    
-    end do 
-    !repetições para media
-    do passo = 0, MCc-1
+    !repetições para media   
+    do passo = 0, sistema%numeroPassosMC-1
         call metropolis
         call wolff
         call superrelaxacao
@@ -100,6 +80,7 @@ subroutine BCC(hist, parametroOrdem, MCx, MCc, Mct, L, A,t0, q)
         hist(passo,1)=quantidadesTermodinamicas%Magnetizacao(1)/sistema%numeroSitios
         hist(passo,2)=quantidadesTermodinamicas%Magnetizacao(2)/sistema%numeroSitios
         hist(passo,3)=quantidadesTermodinamicas%Magnetizacao(3)/sistema%numeroSitios
+    
     end do 
 
     !fim do programa 
@@ -145,21 +126,12 @@ subroutine BCC(hist, parametroOrdem, MCx, MCc, Mct, L, A,t0, q)
         type(Spin) :: projecao
         type(Spin) :: projecaoVizinho
         type(Spin) :: campoEfetivo
-        ! double precision :: produto
-        ! double precision :: produtoSemente
-        ! double precision :: produtoVizinho
-        ! double precision :: produtoSitio
-        ! double precision :: probabilidade
-        ! double precision :: deltaE
-        
-        real :: produto
-        real :: produtoSemente
-        real :: produtoVizinho
-        real :: produtoSitio
-        real :: probabilidade
-        real :: deltaE
-        
-
+        double precision :: produto
+        double precision :: produtoSemente
+        double precision :: produtoVizinho
+        double precision :: produtoSitio
+        double precision :: probabilidade
+        double precision :: deltaE
         integer ::viz, j
         integer :: semente, ponteiro, sitio, sitioVizinho
         real :: JJ
@@ -296,24 +268,20 @@ subroutine BCC(hist, parametroOrdem, MCx, MCc, Mct, L, A,t0, q)
     subroutine Inicializar
         !Variaveis locais
         integer :: i, j
-        
+        type(Spin) :: campoefetivo
             
         quantidadesTermodinamicas%magnetizacao=0 !magnetização instantanea
         quantidadesTermodinamicas%energia=0 !Energia instantanea
         
-        ! do i = 0, sistema%numeroSitios -1
-        !     forall  (j = 1:3)
-        !     campoefetivo0(j) = (rede(vizinhos(0,i))%S(j)*ligacao(0,i) + &
-        !                       & rede(vizinhos(1,i))%S(j)*ligacao(1,i) + &
-        !                       & rede(vizinhos(2,i))%S(j)*ligacao(2,i) + &
-        !                       & rede(vizinhos(3,i))%S(j)*ligacao(3,i) )
-        !     end forall
-        !     do j= 1, 3
-        !         quantidadesTermodinamicas%energia = quantidadesTermodinamicas%energia - rede(i)%S(j)*campoefetivo0(j)  
-        !     end do
-        ! end do 
-        quantidadesTermodinamicas%energia=energia()
-        quantidadesTermodinamicas%energia2=energia2()
+        do i = 0, sistema%numeroSitios -1
+            campoefetivo = campo(i) 
+            do j= 1, 3
+                quantidadesTermodinamicas%energia = quantidadesTermodinamicas%energia - rede(i)%S(j)*campoefetivo%S(j)  
+            end do
+        end do 
+        
+        quantidadesTermodinamicas%energia = quantidadesTermodinamicas%energia/2
+        
         forall  (j=1:3)
             quantidadesTermodinamicas%magnetizacao(j) = sum(rede(:)%S(j))
         end forall
@@ -324,20 +292,19 @@ subroutine BCC(hist, parametroOrdem, MCx, MCc, Mct, L, A,t0, q)
         integer::  i
         ligacao=1
         do i=0, sistema%numeroSitios-1
-            if (rede(i)%s2==0) then
-                ligacao(0,vizinhos(0,i))=real(A)
-                ligacao(1,vizinhos(1,i))=real(A)
-                ligacao(2,vizinhos(2,i))=real(A)
-                ligacao(3,vizinhos(3,i))=real(A)
+            if(rede(i)%s2==0)then
+                ligacao(0,vizinhos(0,i))=A
+                ligacao(1,vizinhos(1,i))=A
+                ligacao(2,vizinhos(2,i))=A
+                ligacao(3,vizinhos(3,i))=A
        
-                ligacao(0,vizinhos(4 , vizinhos(4,i) ))=real(A)
-                ligacao(1,vizinhos(5 , vizinhos(5,i) ))=real(A)
-                ligacao(2,vizinhos(6 , vizinhos(6,i) ))=real(A)
-                ligacao(3,vizinhos(7 , vizinhos(7,i) ))=real(A)                       
+                ligacao(0,vizinhos(4 , vizinhos(4,i) ))=A
+                ligacao(1,vizinhos(5 , vizinhos(5,i) ))=A
+                ligacao(2,vizinhos(6 , vizinhos(6,i) ))=A
+                ligacao(3,vizinhos(7 , vizinhos(7,i) ))=A                       
            end if       
          end do
-       
-         ! apaga exesso de ligações 
+       ! apaga exesso de ligações 
         do i=0,sistema%numeroSitios-1
             if(rede(i)%S2==0 )then
                 ligacao(0,i)=0
@@ -392,6 +359,8 @@ subroutine marcarVizinhos !rede bcc ok
                 vizinhos(6,site) = i      + j*L      +  ant(k)*L2  +  L3!Vermelho  ok
                 vizinhos(7,site) = i      + ant(j)*L +  ant(k)*L2  +  L3!verde ok
             
+
+
             !subrede Vermelha 
                 site             = i      + j*L      +  k*L2     +   L3  !sitio Vermelho
                 vizinhos(0,site) = suc(i) + suc(j)*L +  suc(k)*L2   !azul ok
@@ -414,25 +383,15 @@ end subroutine marcarVizinhos
 
 Subroutine diluir
     !Variaveis Locais
-    
-    integer :: i,cont
-if ( q==0 ) then
-    rede(0:sistema%numeroSitios-1) = Spin((/1,0,0/),1)
-else
-    rede(0:sistema%numeroVacancias-1) = Spin((/0,0,0/),0)
-    rede(sistema%numeroVacancias : sistema%numeroSitios-1) = Spin((/1,0,0/),1)
+    integer :: numeroVacancias
+    integer :: i
+
+    NumeroVacancias = int(sistema%numeroSitios*p)
+    rede(0:NumeroVacancias-1) = Spin((/0,0,0/),0)
+    rede(NumeroVacancias:sistema%numeroSitios-1) = Spin((/1,0,0/),1)
     do i=1,100 
         call Shuffle(rede)
     end do 
-    cont=0
-    do i=0 ,sistema%numeroSitios-1
-        if (rede(i)%S2==0 ) then
-            zeros(cont)=i 
-            cont=cont+1
-        end if
-    end do
-end if
-    
    
 end subroutine diluir
 
@@ -444,8 +403,6 @@ subroutine lerDados()
     sistema%numeroTermalizacao=MCx
     sistema%numeroPassosMC=Mcc
     sistema%numeroSitios = 2*sistema%L*sistema%L*sistema%L 
-    sistema%numeroTentativas=sistema%numeroSitios*sistema%numeroCoordenacao*q
-    sistema%numeroVacancias=sistema%numeroSitios*q
 end subroutine LerDados
     
 !-----------------------------------------------------------------------------
@@ -495,90 +452,6 @@ function direcao()!Marsaglia(rand)
 end function direcao !Marsaglia
 
 !-----------------------------------------------------------------------------
-
-function ordemA()
-    real:: ordemA
-    integer :: i
-    ordemA=0
-    do i = 0, 2*L*L*L -1
-      ordemA = ordemA + 1 - 1.0/8*ABS(-8*rede(i)%s2 + &
-        & rede(vizinhos(0,i))%s2 + &
-        & rede(vizinhos(1,i))%s2 + &
-        & rede(vizinhos(2,i))%s2 + &
-        & rede(vizinhos(3,i))%s2 + &
-        & rede(vizinhos(4,i))%s2 + &
-        & rede(vizinhos(5,i))%s2 + &
-        & rede(vizinhos(6,i))%S2 + &
-        & rede(vizinhos(7,i))%S2 )   
-    end do 
-    ordemA=ordemA/(2*L*L*L)
-end function ordemA
-
-!-----------------------------------------------------------------------------
-subroutine trocaAlFe()
-    implicit none
-    INTEGER i,k, j, cont
-    real::Ef
-    do cont=1, sistema%numeroTentativas
-        call random_number(rando)
-        k=int(rando*sistema%numeroVacancias)
-        i=zeros(k)
-        call random_number(rando)
-        j = vizinhos(int(rando*sistema%numeroCoordenacao),i)
-        if (rede(j)%S2==1) then
-            Ligacao2=Ligacao
-            rede(i)=rede(j)
-            rede(j)=Spin((/0,0,0/),0)
-            call marcaLigacao
-            EF=Energia2()
-            call random_number(rando)
-            if (rando< exp(0.1*(EF-quantidadesTermodinamicas%energia2)/t0)) then
-                quantidadesTermodinamicas%energia2=EF
-                zeros(k)=j
-                !if (quantidadesTermodinamicas%ordemA==0.00) exit
-            else
-                rede(j)=rede(i)
-                rede(i)=Spin((/0,0,0/),0)
-                Ligacao=Ligacao2
-            end if          
-        end if
-    end do
-end subroutine trocaAlFe
-!----------------------------------------------------------------
-
-function Energia()
-    real:: Energia
-    integer :: i, j
-    Energia=0
-    do i = 0, sistema%numeroSitios -1
-        forall  (j = 1:3)
-        campoefetivo0(j) = (rede(vizinhos(0,i))%S(j)*ligacao(0,i) + &
-                          & rede(vizinhos(1,i))%S(j)*ligacao(1,i) + &
-                          & rede(vizinhos(2,i))%S(j)*ligacao(2,i) + &
-                          & rede(vizinhos(3,i))%S(j)*ligacao(3,i) )
-        end forall
-        do j= 1, 3
-            energia = energia - rede(i)%S(j)*campoefetivo0(j)  
-        end do
-    end do 
-end function Energia
-
-!------------------------------------------------------------------------------
-function Energia2()
-    real:: Energia2
-    integer :: i, j
-    Energia2=0
-    do i = 0, sistema%numeroSitios -1
-        do j= 1, 3
-            energia2 = energia2 - rede(i)%s2*(rede(vizinhos(0,i))%s2*ligacao(0,i) + &
-                    & rede(vizinhos(1,i))%s2*ligacao(1,i) + &
-                    & rede(vizinhos(2,i))%s2*ligacao(2,i) + &
-                    & rede(vizinhos(3,i))%s2*ligacao(3,i))
-        end do
-    end do 
-end function Energia2
-
-!-----------------------------------------------------------------------------
 !The Knuth shuffle is used to create a random permutation of an array.
 subroutine Shuffle(vetor)
     
@@ -597,7 +470,7 @@ subroutine Shuffle(vetor)
     end do
 end subroutine Shuffle
 
-
+!----------------------------------------------------------------------------- 
 SUBROUTINE init_random_seed()
         INTEGER :: i, n, clock
         INTEGER, DIMENSION(:), ALLOCATABLE :: seed

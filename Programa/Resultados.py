@@ -1,3 +1,33 @@
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+""" Implementação de um programa de simulação de sistemas diluido génerico.
+    Este módulo implementa uma classe secundaria da simulação, que tem por objeto apresentar resultados da simulação. 
+"""
+ 
+__author__ = "João Batista dos Santos-Filho"
+__copyright__ = "Copyright 2017, by Santos-Filho"
+__credits__ = "Todos desenvolvedores de software livre"
+__license__ = "GNU General Public License"
+__version__ = "0.20.04"
+__maintainer__ = "João Batista dos Santos-Filho"
+__email__ = "dr@joaobatista.eng.br"
+__status__ = "alpha"
+
+#TODO: compara todos arquivos 
+#TODO: documentar todos Arquivos
+#TODO: Colocar o todo de cada arquivo  
+#TODO: revisar os testes 
+#TODO: metrificar meu trabalho
+#TODO: usar notas da simulacao para salvar no firebasebase
+#TODO: criar um sistema de versionamento mais eficiente 
+#TODO: criar um pacote python 
+#TODO: contar quanto processos faltam 
+#TODO: colocar carga da cpu como dado de entrada 
+#TODO: usar keywords
+#TODO: melhorar a apresentacao da espera dos novos processos print('.', end="") ok
+#FIXME: se processador estiver acima do limite o programa rodar 1 processo quando o processo finalizar ele vai travar
+
 from Enviar import Receber
 import threading
 import os.path

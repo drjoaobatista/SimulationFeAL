@@ -1,17 +1,41 @@
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+""" Implementação de um programa de simulação de sistemas diluido génerico.
+    Este módulo implementa a classe que envia os dados parar o firebase respondendo a eventos, ou chamando a rotina de enviar. 
+"""
+ 
+__author__ = "João Batista dos Santos-Filho"
+__copyright__ = "Copyright 2017, by Santos-Filho"
+__credits__ = "Todos desenvolvedores de software livre"
+__license__ = "GNU General Public License"
+__version__ = "0.20.04"
+__maintainer__ = "João Batista dos Santos-Filho"
+__email__ = "dr@joaobatista.eng.br"
+__status__ = "beta"
+#TODO: implemetar e testar a rotina de contador e soma dos TCs
+#TODO: documentar
+#TODO: revisar os testes 
+#TODO: usar keywords
+
+#FIXME: se processador estiver acima do limite o programa rodar 1 processo quando o processo finalizar ele vai travar
+ 
 import threading
 import json
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import db
 from Observador import Observer, Event
+from datetime import date
 
 class Enviar(Observer, threading.Thread):
 
     def __init__(self, **kwargs):
         Observer.__init__(self)
         self.nomeRef=kwargs.get('nomeRef')
+        dataAtual = date.today()
         if not self.nomeRef:
-            self.nomeRef="FeAl"
+            self.nomeRef="Teste-{}".format(dataAtual)
         self.transaction=kwargs.get('transaction') #padrao false
         self.conectar()
 
@@ -36,7 +60,7 @@ class Enviar(Observer, threading.Thread):
                 self.ref.push(dadosJson)
 
     def reset(self):
-        self.ref.set('');
+        self.ref.set('')
 
     def setNomeSimulacao(self, nomeRef):
         self.nomeRef=nomeRef
@@ -105,36 +129,34 @@ class Receber(Observer, threading.Thread):
 
 
 #----------------------- teste
-import os
-import unittest
-class TesteEnviarReceber(unittest.TestCase):
-    def test(self):
-        enviar = Enviar()
-        enviar.setNomeSimulacao("teste")
-        enviar.reset()
-        enviar.observe('enviar', enviar)
-        Event('enviar',  'teste')
-        Event('enviar',  [[0,1,2],"casa"])
-        receber=Receber()
-        receber.setNomeSimulacao("teste")
-        receber()
-        self.assertIn('teste', receber.dados)
-        self.assertIn([[0,1,2],"casa"], receber.dados)
-
-    def test2(self):
-        enviar = Enviar(transaction=True)
-     #  enviar = Enviar()
-        enviar.setNomeSimulacao("teste2")
-        enviar.reset()
-        enviar.observe('enviar2', enviar)
-        Event('enviar2',  1)
-        Event('enviar2',  2.5)
-        receber=Receber()
-        receber.setNomeSimulacao("teste2")
-        receber()
-        print(receber.dados)
-        self.assertEqual(3, 3)
-
 if __name__ == '__main__':
+    import os
+    import unittest
+    class TesteEnviarReceber(unittest.TestCase):
+        def test1(self):
+            enviar = Enviar()
+            enviar.setNomeSimulacao("teste")
+            enviar.reset()
+            enviar.observe('enviar', enviar)
+            Event('enviar',  'teste')
+            Event('enviar',  [[0,1,2],"casa"])
+            receber=Receber()
+            receber.setNomeSimulacao("teste")
+            receber()
+            self.assertIn('teste', receber.dados)
+            self.assertIn([[0,1,2],"casa"], receber.dados)
+
+        def test2(self):
+            enviar = Enviar(transaction=True)
+            enviar.setNomeSimulacao("teste2")
+            enviar.reset()
+            enviar.observe('enviar2', enviar)
+            Event('enviar2',  1)
+            Event('enviar2',  2.5)
+            receber=Receber()
+            receber.setNomeSimulacao("teste2")
+            receber()
+            print(receber.dados)
+            self.assertEqual(3, 3)
     unittest.main()
 

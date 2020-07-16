@@ -1,5 +1,5 @@
 {
-    "A": 1.75,
+    "A": 1.7,
     "concentracao": [
         0,
         0.021,
@@ -25,11 +25,11 @@
         0.22
     ],
     "mcsHistograma": 1000000,
-    "numeroAmostras": 1,
-    "numeroPontos": 300,
-    "raio": 0.07,
-    "relaxacaoHistograma": 500000,
-    "sementeAleatoria": 1,
+    "mcsTroca": 500,
+    "numeroAmostras": 10,
+    "numeroPontos": 50,
+    "raio": 0.12,
+    "relaxacaoHistograma": 1000000,
     "t0": [
         2.093,
         2.0909936,

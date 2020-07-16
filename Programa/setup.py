@@ -7,7 +7,7 @@ with open('README.md') as f:
 
 setup(
     name='FeAl alloy Simulation Monte Carlo ',
-    version='10.08',
+    version='20.04',
     packages=find_packages(exclude=['tests']),
     include_package_data=True,
     
@@ -15,7 +15,7 @@ setup(
     author='João Batista Santos-Filho',
     author_email='joao@jbsantosfilho.com',
     description='Monte Carlo Simulation of Fe-AL alloy',
-    keywords="hello world example examples",
+    keywords="Monte Carlo, Fe-Al, Cluster",
     long_description=long_description,
     url='jbsantosfilho.com',
     classifiers=[
@@ -53,8 +53,8 @@ setup(
         'Intended Audience :: Developers',
         'Development Status :: 1 - Alpha',
         'License :: Other/Proprietary License',
-        'Natural Language :: English',
-        'Operating System :: OS Independent',
+        'Natural Language :: Português',
+        'Operating System :: Linux',
         'Programming Language :: Python :: 3',
         'Topic :: Simulation Monte Carlo :: Fe-Al',
     ],

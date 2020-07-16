@@ -1,3 +1,22 @@
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+""" Implementação de um programa de simulação de sistemas diluido génerico.
+    Este módulo implementa um classe principal da simulação, ele execulta a simulação de uma amostras. 
+"""
+ 
+__author__ = "João Batista dos Santos-Filho"
+__copyright__ = "Copyright 2017, by Santos-Filho"
+__credits__ = "Todos desenvolvedores de software livre"
+__license__ = "GNU General Public License"
+__version__ = "0.20.04"
+__maintainer__ = "João Batista dos Santos-Filho"
+__email__ = "dr@joaobatista.eng.br"
+__status__ = "beta"
+
+#TODO: usar keywords
+#FIXME: se processador estiver acima do limite o programa rodar 1 processo quando o processo finalizar ele vai travar
+
 from multiprocessing import Process,Queue
 import numpy as np
 import geraHist
@@ -32,6 +51,7 @@ class Amostra(Process):
         self.saida["sus"]=(self.saida["sus"]).tolist()
         self.saida["cumu"]=(self.saida["cumu"]).tolist()
         self.saida["cumuE"]=(self.saida["cumuE"]).tolist()
+        self.saida["parametroOrdem"]=(self.parametroOrdem).tolist()
         self.saida["duracao"]=time.time() - self.inicio
         self.saida.update(self.entrada)
 
@@ -39,12 +59,13 @@ class Amostra(Process):
         self.inicio = time.time()
         self.tin=max(self.entrada['t0'] - self.entrada["raio"], 0.01)
         self.tfi=self.entrada['t0'] + self.entrada["raio"]
-        hist=geraHist.bcc(  self.entrada['relaxacaoHistograma'],
+        hist, self.parametroOrdem=geraHist.bcc( self.entrada['relaxacaoHistograma'],
                             self.entrada['mcsHistograma'],
+                            self.entrada['mcsTroca'],
                             self.entrada['L'],
                             self.entrada['A'],
                             self.entrada['t0'],
-                            self.entrada['p'])
+                            self.entrada['q'],)
         self.resultado=analisaHist.histogram(hist,
                                        self.entrada['L'],
                                        self.entrada['t0'],
@@ -68,11 +89,11 @@ if __name__ == "__main__":
             entrada['L']=5
             entrada['relaxacaoHistograma']=100000
             entrada['mcsHistograma']=100000
+            entrada['mcsTroca']=1000
             entrada['A']=1
             entrada['t0']=2.05
             entrada['numeroPontos']=50
-            entrada['p']=0
-            entrada['sementeAleatoria']=1
+            entrada['q']=0.05
             entrada['raio']=0.3
             amostras=[]
             fila=Queue()
@@ -89,4 +110,5 @@ if __name__ == "__main__":
                 self.assertLessEqual(abs(saida['tc']-2.05), 0.2)
                 self.assertEqual(len(saida['t']),entrada['numeroPontos'])
                 p.plot(saida.get('t'),saida.get('sus'),symbol=-1,line=[1,1,''],legend='Q=$q')
+                p.plot(list(range(entrada['mcsTroca'])),saida.get("parametroOrdem"),symbol=-1,line=[1,1,''],legend='Q=$q')
     unittest.main()

@@ -63,7 +63,7 @@ subroutine Histogram(resultado, hist, L, MCc,t0, tin, tfi, num_pontos)
         soma     = 0.0d0
         somaM    = 0.0d0
         somaM2   = 0.0d0
-        somaM4   = 0.0d0
+         somaM4   = 0.0d0
         somaE    = 0.0d0
         somaE2   = 0.0d0
         somaE4   = 0.0d0
