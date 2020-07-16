@@ -41,7 +41,7 @@ class Parametros(Observer, threading.Thread):
 
 
     def __iter__(self):
-        chaves=['relaxacaoHistograma','mcsHistograma','A','numeroPontos','raio','mcsTroca']
+        chaves=['relaxacaoHistograma','mcsHistograma','A','B','numeroPontos','raio','mcsTroca']
         config={}
         for chave in chaves:
             config[chave] = self.entrada.get(chave)

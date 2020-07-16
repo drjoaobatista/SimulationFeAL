@@ -52,12 +52,12 @@ subroutine BCC(hist, parametroOrdem, MCx, MCc, Mct, L, A, B, t0, q)
     type(Disco), dimension(:), allocatable :: pilha
     type(Quantidades) :: quantidadesTermodinamicas
     type(Configuracao) :: sistema 
-    integer, dimension(:,:), allocatable :: vizinhos, vizinhos2
+    integer, dimension(:,:), allocatable :: vizinhos
     real, dimension(:,:), allocatable :: ligacao, ligacao2
     integer,  dimension(:), allocatable ::  zeros
     real, dimension(1:3) :: campoEfetivo0
     real :: rando
-    integer :: passo, passo2
+    integer :: passo
 
     call lerDados()  
     !Abrindo arquivos 
@@ -68,7 +68,6 @@ subroutine BCC(hist, parametroOrdem, MCx, MCc, Mct, L, A, B, t0, q)
     allocate(zeros(0:int(sistema%numeroSitios*q)-1))
     allocate(pilha(1:sistema%numeroSitios)) !usa no wollf e precisa comecar do 1
     allocate(vizinhos(0:sistema%numeroCoordenacao-1, 0:sistema%numeroSitios-1))
-    allocate(vizinhos2(0:sistema%numeroCoordenacao-1, 0:sistema%numeroSitios-1))
     allocate(ligacao(0:sistema%numeroCoordenacao-1,0:sistema%numeroSitios-1))
     allocate(ligacao2(0:sistema%numeroCoordenacao-1,0:sistema%numeroSitios-1))
 
@@ -79,30 +78,30 @@ subroutine BCC(hist, parametroOrdem, MCx, MCc, Mct, L, A, B, t0, q)
     call diluir !gera amostra 
     call marcaLigacao     
     call inicializar 
-    do passo2=0, MCt-1
-        do passo = 0, int(MCx/MCt)-1
-            call metropolis
-            call wolff
-            call superrelaxacao
-        end do 
-        parametroOrdem(passo2)=ordemA()
+    
+    do passo = 0, MCx-1
+        call metropolis
+        call wolff
+        call superrelaxacao
+    end do 
+    do passo = 0, MCt-1
+        call metropolis
+        call wolff
+        call superrelaxacao
+        parametroOrdem(passo)=ordemA()
         call trocaAlFe    
-    end do
-    
+    end do 
     !repetições para media
-    do passo2=0, MCt-1
-        do passo = 0, int(MCc/MCt)-1
-            call metropolis
-            call wolff
-            call superrelaxacao
-            hist(passo,0)=quantidadesTermodinamicas%Energia/sistema%numeroSitios
-            hist(passo,1)=quantidadesTermodinamicas%Magnetizacao(1)/sistema%numeroSitios
-            hist(passo,2)=quantidadesTermodinamicas%Magnetizacao(2)/sistema%numeroSitios
-            hist(passo,3)=quantidadesTermodinamicas%Magnetizacao(3)/sistema%numeroSitios
-        end do 
-        !call trocaAlFe    
-    end do
-    
+    do passo = 0, MCc-1
+        call metropolis
+        call wolff
+        call superrelaxacao
+        hist(passo,0)=quantidadesTermodinamicas%Energia/sistema%numeroSitios
+        hist(passo,1)=quantidadesTermodinamicas%Magnetizacao(1)/sistema%numeroSitios
+        hist(passo,2)=quantidadesTermodinamicas%Magnetizacao(2)/sistema%numeroSitios
+        hist(passo,3)=quantidadesTermodinamicas%Magnetizacao(3)/sistema%numeroSitios
+    end do 
+
     !fim do programa 
     CONTAINS
 !-----------------------------------------------------------------------------
@@ -409,34 +408,6 @@ subroutine marcarVizinhos !rede bcc ok
         END DO
     END DO
      
-!segundos vizinhos
-    DO k = 0 , L-1
-        DO j = 0 , L-1
-            DO i = 0 , L-1
-            !subrede Amarela
-                site =             i      + j*L      +  k*L2     !sitio amarelo      
-
-                vizinhos2(0,site) = ant(i) + j*L +  k*L2    
-                vizinhos2(1,site) = i      + ant(j)*L +  k*L2    
-                vizinhos2(2,site) = i      + j*L      +  ant(k)*L2    
-                
-                vizinhos2(3,site) = suc(i) +  j*L      +  k*L2    
-                vizinhos2(4,site) = i  +    suc(j)*L   +  k*L2  
-                vizinhos2(5,site) = i  +      j*L      +   suc(k)*L2  
-            
-            !subrede Vermelha 
-                site             = i      + j*L      +  k*L2     +   L3  !sitio Vermelho
-                vizinhos2(0,site) = ant(i) + j*L +  k*L2    +   L3
-                vizinhos2(1,site) = i      + ant(j)*L +  k*L2    +   L3
-                vizinhos2(2,site) = i      + j*L      +  ant(k)*L2    +   L3
-                
-                vizinhos2(3,site) = suc(i) +  j*L      +  k*L2    +   L3
-                vizinhos2(4,site) = i  +    suc(j)*L   +  k*L2   +   L3
-                vizinhos2(5,site) = i  +      j*L      +   suc(k)*L2  +   L3
-            END DO
-        END DO
-    END DO
-
 end subroutine marcarVizinhos
 
 !-----------------------------------------------------------------------------

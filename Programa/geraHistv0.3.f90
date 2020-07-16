@@ -52,7 +52,7 @@ subroutine BCC(hist, parametroOrdem, MCx, MCc, Mct, L, A, B, t0, q)
     type(Disco), dimension(:), allocatable :: pilha
     type(Quantidades) :: quantidadesTermodinamicas
     type(Configuracao) :: sistema 
-    integer, dimension(:,:), allocatable :: vizinhos, vizinhos2
+    integer, dimension(:,:), allocatable :: vizinhos
     real, dimension(:,:), allocatable :: ligacao, ligacao2
     integer,  dimension(:), allocatable ::  zeros
     real, dimension(1:3) :: campoEfetivo0
@@ -68,7 +68,6 @@ subroutine BCC(hist, parametroOrdem, MCx, MCc, Mct, L, A, B, t0, q)
     allocate(zeros(0:int(sistema%numeroSitios*q)-1))
     allocate(pilha(1:sistema%numeroSitios)) !usa no wollf e precisa comecar do 1
     allocate(vizinhos(0:sistema%numeroCoordenacao-1, 0:sistema%numeroSitios-1))
-    allocate(vizinhos2(0:sistema%numeroCoordenacao-1, 0:sistema%numeroSitios-1))
     allocate(ligacao(0:sistema%numeroCoordenacao-1,0:sistema%numeroSitios-1))
     allocate(ligacao2(0:sistema%numeroCoordenacao-1,0:sistema%numeroSitios-1))
 
@@ -409,34 +408,6 @@ subroutine marcarVizinhos !rede bcc ok
         END DO
     END DO
      
-!segundos vizinhos
-    DO k = 0 , L-1
-        DO j = 0 , L-1
-            DO i = 0 , L-1
-            !subrede Amarela
-                site =             i      + j*L      +  k*L2     !sitio amarelo      
-
-                vizinhos2(0,site) = ant(i) + j*L +  k*L2    
-                vizinhos2(1,site) = i      + ant(j)*L +  k*L2    
-                vizinhos2(2,site) = i      + j*L      +  ant(k)*L2    
-                
-                vizinhos2(3,site) = suc(i) +  j*L      +  k*L2    
-                vizinhos2(4,site) = i  +    suc(j)*L   +  k*L2  
-                vizinhos2(5,site) = i  +      j*L      +   suc(k)*L2  
-            
-            !subrede Vermelha 
-                site             = i      + j*L      +  k*L2     +   L3  !sitio Vermelho
-                vizinhos2(0,site) = ant(i) + j*L +  k*L2    +   L3
-                vizinhos2(1,site) = i      + ant(j)*L +  k*L2    +   L3
-                vizinhos2(2,site) = i      + j*L      +  ant(k)*L2    +   L3
-                
-                vizinhos2(3,site) = suc(i) +  j*L      +  k*L2    +   L3
-                vizinhos2(4,site) = i  +    suc(j)*L   +  k*L2   +   L3
-                vizinhos2(5,site) = i  +      j*L      +   suc(k)*L2  +   L3
-            END DO
-        END DO
-    END DO
-
 end subroutine marcarVizinhos
 
 !-----------------------------------------------------------------------------

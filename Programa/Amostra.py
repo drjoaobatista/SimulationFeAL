@@ -64,6 +64,7 @@ class Amostra(Process):
                             self.entrada['mcsTroca'],
                             self.entrada['L'],
                             self.entrada['A'],
+                            self.entrada['B'],
                             self.entrada['t0'],
                             self.entrada['q'],)
         self.resultado=analisaHist.histogram(hist,
@@ -91,6 +92,7 @@ if __name__ == "__main__":
             entrada['mcsHistograma']=100000
             entrada['mcsTroca']=1000
             entrada['A']=1
+            entrada['B']=-0.5
             entrada['t0']=2.05
             entrada['numeroPontos']=50
             entrada['q']=0.05
@@ -102,13 +104,16 @@ if __name__ == "__main__":
                 amostras.append(amostra)
                 amostra.start()
             p=js.grace()
+            p2=js.grace()
             p.yaxis(label='y',charsize=1.50)
             p.xaxis(label='x',charsize=1.50)
+            p2.yaxis(label='y',charsize=1.50)
+            p2.xaxis(label='x',charsize=1.50)
             for amostra in amostras:
                 amostra.join()
                 saida= amostra.fila.get()
                 self.assertLessEqual(abs(saida['tc']-2.05), 0.2)
                 self.assertEqual(len(saida['t']),entrada['numeroPontos'])
                 p.plot(saida.get('t'),saida.get('sus'),symbol=-1,line=[1,1,''],legend='Q=$q')
-                p.plot(list(range(entrada['mcsTroca'])),saida.get("parametroOrdem"),symbol=-1,line=[1,1,''],legend='Q=$q')
+                p2.plot(list(range(entrada['mcsTroca'])),saida.get("parametroOrdem"),symbol=-1,line=[1,1,''],legend='Q=$q')
     unittest.main()
