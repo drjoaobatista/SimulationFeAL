@@ -1,2 +1,3 @@
 SimulationFeAL
-T12 
+T18 t12+ t05 
+variando o j 
