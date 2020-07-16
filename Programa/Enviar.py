@@ -18,7 +18,7 @@ __status__ = "beta"
 #TODO: revisar os testes 
 #TODO: usar keywords
 
-#FIXME: se processador estiver acima do limite o programa rodar 1 processo quando o processo finalizar ele vai travar
+#corrigido: se processador estiver acima do limite o programa rodar 1 processo quando o processo finalizar ele vai travar 
  
 import threading
 import json
@@ -61,6 +61,17 @@ class Enviar(Observer, threading.Thread):
 
     def reset(self):
         self.ref.set('')
+    
+    def indexa(self, **kwargs):
+        entrada=kwargs.get("entrada")
+        if entrada:
+            entrada="não configurada"
+        ref = db.reference('A0')
+        ref.push(self.nomeRef)
+        ref=db.reference(self.nomeRef+"/informacao")
+        dadosJson=json.dumps(entrada)
+        ref.push(dadosJson)
+
 
     def setNomeSimulacao(self, nomeRef):
         self.nomeRef=nomeRef
@@ -92,6 +103,26 @@ class Receber(Observer, threading.Thread):
         if not self.nomeRef:
             self.nomeRef="FeAl"
         self.conectar()
+    
+    def lerIndice(self, **kwargs): #TODO ler indice 
+        ref = db.reference('A0')
+        dadosBrutos= ref.get()
+        if isinstance(dadosBrutos, dict):
+            self.nomes=dadosBrutos.values()
+    
+    def lerInformacoes(self, **kwargs): #TODO ler indice 
+        nomeRef=kwargs.get('nomeRef')
+        if nomeRef:
+            self.setNomeSimulacao(nomeRef=nomeRef)
+        infRef = db.reference(self.nomeRef + "/informacao")
+        dadosBrutos= infRef.get()
+        if isinstance(dadosBrutos, dict):
+            self.informacao=[]
+            for key,dadoJson in dadosBrutos.items():
+                self.informacao.append(json.loads(dadoJson))
+       
+        
+
 
     def __call__(self):
         dadosBrutos= self.ref.get()
@@ -125,9 +156,6 @@ class Receber(Observer, threading.Thread):
         self.ref = db.reference(self.nomeRef)
 
 
-
-
-
 #----------------------- teste
 if __name__ == '__main__':
     import os
@@ -158,5 +186,30 @@ if __name__ == '__main__':
             receber()
             print(receber.dados)
             self.assertEqual(3, 3)
+        
+        def test3(self):
+            enviar = Enviar()
+            enviar.setNomeSimulacao("teste2")
+            enviar.reset()
+            entrada={}
+            entrada['tamanhos'] = [10]
+            entrada['relaxacaoHistograma'] = 500000
+            entrada['mcsHistograma'] = 1000000
+            entrada['A'] = 1.7
+            entrada['B'] = 1
+            entrada['numeroPontos'] = 300
+            entrada['concentracao'] = [0, 0.021, 0.025, 0.04, 0.05,  0.06,  0.07,  0.075, 0.08, 0.09,  0.1,  0.11, 0.12,0.13, 0.14, 0.15, 0.16, 0.17, 0.18, 0.198, 0.2, 0.220, 0.24, 0.247, 0.265,0.3, 0.35, 0.4, 0.5, 0.6 ]
+            entrada['t0'] = [2.0938997, 2.091892414662, 2.089885129325, 2.083863273312, 2.077841417299, 2.071819561285, 2.065797705272, 2.065797705272, 2.061783134597, 2.053753993246, 2.043717566558, 2.037695710545, 2.027659283857, 2.017622857168, 2.003571859804, 1.989520862441, 1.975469865077, 1.9553970117, 1.941346014336, 1.889156595557, 1.881127454206, 1.862, 1.74, 1.682, 1.55, 1.29766, 1.0465, 0.8372, 0.6279, 0.29302, 0.04186]
+            entrada['clusterlimite']=60
+            entrada['numeroAmostras']=20
+            entrada['raio']=0.12
+            enviar.indexa(entrada=entrada)
+            receber2=Receber()
+            receber2.setNomeSimulacao("teste2")
+            receber2.lerIndice()
+            receber2.lerInformacoes()
+            print(receber2.nomes)
+            self.assertIn('teste2', receber2.nomes)
+            
     unittest.main()
 

@@ -41,21 +41,23 @@ class Parametros(Observer, threading.Thread):
 
 
     def __iter__(self):
-        chaves=['relaxacaoHistograma','mcsHistograma','A','numeroPontos','raio', 'clusterlimite']
+        chaves=['relaxacaoHistograma','mcsHistograma','A','numeroPontos','raio']
         config={}
+        B=self.entrada.get('B')
         for chave in chaves:
             config[chave] = self.entrada.get(chave)
         for L in self.entrada["tamanhos"]:
             for self.amostraSimulada in range(self.entrada["numeroAmostras"]):
-                for t0, q in zip(self.entrada['t0'], self.entrada['concentracao']):
+                for t0, q, J in zip(self.entrada['t0'], self.entrada['concentracao'],self.entrada['Js']):
                     config["L"]=L
                     config["q"]=q
                     config["t0"]=t0
+                    config["J"]= J
+                    # if q>0.15:
+                    #     config["J"]=1-1.7*(q-0.15) 
+                    # else:
+                    #     config["J"]=1 
                     yield config
-
-
-
-
 
 #--------
 if __name__ == "__main__":
@@ -68,13 +70,14 @@ if __name__ == "__main__":
             entrada['tamanhos']=[5]
             entrada['relaxacaoHistograma']=100000
             entrada['mcsHistograma']=100000
+
             entrada['numeroPontos']=50
             entrada['concentracao']=[0, 0.1]
             entrada['t0']=[2.09, 1.8]
             entrada['A']=1
             entrada['raio']=1
             parametros=Parametros(entrada=entrada)
-            parametros.observe('teste', parametros.update)
+            parametros.observe('teste', parametros.update)         
             dados={}
             dados['q']=0.1
             dados['tc']=2
@@ -91,6 +94,7 @@ if __name__ == "__main__":
             entrada['concentracao']=[0, 0.1]
             entrada['t0']=[2.09, 1.8]
             entrada['A']=1
+            entrada['B']=0.75
             entrada['sementeAleatoria']=1
             entrada['raio']=1
             parametros=Parametros(entrada=entrada)
@@ -107,6 +111,8 @@ if __name__ == "__main__":
             entrada={}
             entrada["numeroAmostras"]=55
             entrada['tamanhos']=[5]
+            entrada['relaxacao']=1000
+            entrada['mcs']=1000
             entrada['relaxacaoHistograma']=100000
             entrada['mcsHistograma']=100000
 

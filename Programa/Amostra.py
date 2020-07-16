@@ -27,7 +27,7 @@ class Amostra(Process):
         Process.__init__(self)
         self.fila=fila
         self.entrada=entrada
-
+        
     def preparaSaida(self):
         VectResultado = np.array(self.resultado)
         self.saida={}
@@ -61,9 +61,9 @@ class Amostra(Process):
                             self.entrada['mcsHistograma'],
                             self.entrada['L'],
                             self.entrada['A'],
+                            self.entrada['J'],
                             self.entrada['t0'],
-                            self.entrada['q'],
-                            self.entrada['clusterlimite'])
+                            self.entrada['q'])
         self.resultado=analisaHist.histogram(hist,
                                        self.entrada['L'],
                                        self.entrada['t0'],
@@ -88,24 +88,24 @@ if __name__ == "__main__":
             entrada['relaxacaoHistograma']=100000
             entrada['mcsHistograma']=100000
             entrada['A']=1
+            entrada['J']=1
             entrada['t0']=2.05
             entrada['numeroPontos']=50
             entrada['q']=0
             entrada['raio']=0.3
-            entrada['clusterlimite']=50
             amostras=[]
             fila=Queue()
             for i in range(0,5):
                 amostra=Amostra(fila,entrada)
                 amostras.append(amostra)
                 amostra.start()
-            p=js.grace()
-            p.yaxis(label='y',charsize=1.50)
-            p.xaxis(label='x',charsize=1.50)
+            q=js.grace()
+            q.yaxis(label='y',charsize=1.50)
+            q.xaxis(label='x',charsize=1.50)
             for amostra in amostras:
                 amostra.join()
                 saida= amostra.fila.get()
                 self.assertLessEqual(abs(saida['tc']-2.05), 0.2)
                 self.assertEqual(len(saida['t']),entrada['numeroPontos'])
-                p.plot(saida.get('t'),saida.get('sus'),symbol=-1,line=[1,1,''],legend='Q=$q')
+                q.plot(saida.get('t'),saida.get('sus'),symbol=-1,line=[1,1,''],legend='Q=$q')
     unittest.main()
