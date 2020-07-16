@@ -1,5 +1,5 @@
 !  Copyright 2014 Joao Batista dos Santos Filho <joao@jbsantosfilho.com>
-!f2py3 -c geraHist.f90 -m geraHist
+
 subroutine BCC(hist, MCx, MCc,L, A,t0,p, Clusterlimite)
     implicit none
     save  
@@ -7,12 +7,11 @@ subroutine BCC(hist, MCx, MCc,L, A,t0,p, Clusterlimite)
     real(8), intent(out),dimension(0:Mcc-1,0:3):: hist
     !f2py intent(out) :: hist       
     !entradas 
-    integer, intent(in)::L, MCx, MCc, Clusterlimite ! para que tamanho de agloreado exixte j2
-    !f2py intent(in) ::L, MCx, MCc, Clusterlimite
+    integer, intent(in)::L, MCx, MCc ! para que tamanho de agloreado exixte j2
+    !f2py intent(in) ::L, MCx, MCc
 
     real(8), intent(in)::A,t0, p   !p=0 sistema puro
     !f2py intent(in) :: A,t0, p
-    
     
     type :: Spin
         double precision, dimension(1:3) :: s
@@ -47,7 +46,6 @@ subroutine BCC(hist, MCx, MCc,L, A,t0,p, Clusterlimite)
     type(Configuracao) :: sistema 
     integer, dimension(:,:), allocatable :: vizinhos
     real, dimension(:,:), allocatable :: ligacao
-    integer,  dimension(:), allocatable :: marcacao
     real :: rando
     integer :: passo
 
@@ -57,18 +55,15 @@ subroutine BCC(hist, MCx, MCc,L, A,t0,p, Clusterlimite)
    
     !inicilização das variaveis 
     allocate(rede(0:sistema%numeroSitios-1))
-    allocate(marcacao(0:sistema%numeroSitios-1))
     allocate(pilha(1:sistema%numeroSitios)) !usa no wollf e precisa comecar do 1
     allocate(vizinhos(0:sistema%numeroCoordenacao-1, 0:sistema%numeroSitios-1))
     allocate(ligacao(0:sistema%numeroCoordenacao-1,0:sistema%numeroSitios-1))
    
     rede=Spin((/1,0,0/),1)
-    marcacao=0
     call init_random_seed()   
    ! call random_seed(PUT=seed)
     call marcarVizinhos
     call diluir !gera amostra 
-    call MarcaAgrupamentos
     call marcaLigacao     
     call inicializar 
     do passo = 0, sistema%numeroTermalizacao-1
@@ -85,6 +80,7 @@ subroutine BCC(hist, MCx, MCc,L, A,t0,p, Clusterlimite)
         hist(passo,1)=quantidadesTermodinamicas%Magnetizacao(1)/sistema%numeroSitios
         hist(passo,2)=quantidadesTermodinamicas%Magnetizacao(2)/sistema%numeroSitios
         hist(passo,3)=quantidadesTermodinamicas%Magnetizacao(3)/sistema%numeroSitios
+    
     end do 
 
     !fim do programa 
@@ -296,20 +292,19 @@ subroutine BCC(hist, MCx, MCc,L, A,t0,p, Clusterlimite)
         integer::  i
         ligacao=1
         do i=0, sistema%numeroSitios-1
-            if ((rede(i)%s2==0).AND.(marcacao(i)<Clusterlimite)) then
-                ligacao(0,vizinhos(0,i))=real(A)
-                ligacao(1,vizinhos(1,i))=real(A)
-                ligacao(2,vizinhos(2,i))=real(A)
-                ligacao(3,vizinhos(3,i))=real(A)
+            if(rede(i)%s2==0)then
+                ligacao(0,vizinhos(0,i))=A
+                ligacao(1,vizinhos(1,i))=A
+                ligacao(2,vizinhos(2,i))=A
+                ligacao(3,vizinhos(3,i))=A
        
-                ligacao(0,vizinhos(4 , vizinhos(4,i) ))=real(A)
-                ligacao(1,vizinhos(5 , vizinhos(5,i) ))=real(A)
-                ligacao(2,vizinhos(6 , vizinhos(6,i) ))=real(A)
-                ligacao(3,vizinhos(7 , vizinhos(7,i) ))=real(A)                       
+                ligacao(0,vizinhos(4 , vizinhos(4,i) ))=A
+                ligacao(1,vizinhos(5 , vizinhos(5,i) ))=A
+                ligacao(2,vizinhos(6 , vizinhos(6,i) ))=A
+                ligacao(3,vizinhos(7 , vizinhos(7,i) ))=A                       
            end if       
          end do
-       
-         ! apaga exesso de ligações 
+       ! apaga exesso de ligações 
         do i=0,sistema%numeroSitios-1
             if(rede(i)%S2==0 )then
                 ligacao(0,i)=0
@@ -364,6 +359,8 @@ subroutine marcarVizinhos !rede bcc ok
                 vizinhos(6,site) = i      + j*L      +  ant(k)*L2  +  L3!Vermelho  ok
                 vizinhos(7,site) = i      + ant(j)*L +  ant(k)*L2  +  L3!verde ok
             
+
+
             !subrede Vermelha 
                 site             = i      + j*L      +  k*L2     +   L3  !sitio Vermelho
                 vizinhos(0,site) = suc(i) + suc(j)*L +  suc(k)*L2   !azul ok
@@ -472,47 +469,6 @@ subroutine Shuffle(vetor)
         vetor(i) = temp
     end do
 end subroutine Shuffle
-!----------------------------------------------------------------------------- 
-    
-Subroutine  MarcaAgrupamentos
-    integer i, n
-    do i = 0, sistema%numeroSitios-1
-        if ((rede(i)%S2==0).AND.(marcacao(i)==0)) then
-            marcacao(i)=-1
-            n=agrupamento(i)
-            where (marcacao==-1)
-                marcacao=n
-            end where
-        end if
-    end do
-end  Subroutine  MarcaAgrupamentos
-
-!----------------------------------------------------------------------------- 
-
-function  agrupamento(j)
-    integer :: agrupamento 
-    integer, intent(in) :: j
-    integer i, v, topoDaPilha, num
-    integer, dimension(0:sistema%numeroSitios-1) :: pilhaInt
-    
-    num=1
-    topoDaPilha=1
-    pilhaInt(topoDaPilha)=j
-    do while (topoDaPilha>0)
-         i=pilhaInt(topoDaPilha)
-         topoDaPilha=topoDaPilha-1
-         do v=0 ,  7
-            if ((rede(vizinhos(v,i))%s2==0).AND.(marcacao(vizinhos(v,i))==0)) then
-                marcacao(vizinhos(v,i))=-1
-                num=num+1
-                topoDaPilha=topoDaPilha+1
-                pilhaInt(topoDaPilha)=vizinhos(v,i)
-            end if
-        end do
-    end do
-    agrupamento = num 
-
-end  function  agrupamento
 
 !----------------------------------------------------------------------------- 
 SUBROUTINE init_random_seed()

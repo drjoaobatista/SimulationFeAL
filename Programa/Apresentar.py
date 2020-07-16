@@ -5,12 +5,12 @@ class Apresentar(Observer, threading.Thread):
         Observer.__init__(self) # Observer's init needs to be called
     def __call__(self, data):
         if data["tc"]:
-            print('tc:', data["tc"],'p:', data["p"] )
+            print('tc:', data["tc"],'q:', data["q"] )
         else:
             print('tudo:', data)
 
 if __name__ == "__main__":
     apresentar = Apresentar()
     apresentar.observe('Apresentar', apresentar)
-    Event('Apresentar',  {"tc":1,"p":1})
+    Event('Apresentar',  {"tc":1,"q":1})
     

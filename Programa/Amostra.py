@@ -1,3 +1,21 @@
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+""" Implementação de um programa de simulação de sistemas diluido génerico.
+    Este módulo implementa um classe principal da simulação, ele execulta a simulação de uma amostras. 
+"""
+ 
+__author__ = "João Batista dos Santos-Filho"
+__copyright__ = "Copyright 2017, by Santos-Filho"
+__credits__ = "Todos desenvolvedores de software livre"
+__license__ = "GNU General Public License"
+__version__ = "0.20.04"
+__maintainer__ = "João Batista dos Santos-Filho"
+__email__ = "dr@joaobatista.eng.br"
+__status__ = "beta"
+
+#TODO: usar keywords
+#FIXME: se processador estiver acima do limite o programa rodar 1 processo quando o processo finalizar ele vai travar
 from multiprocessing import Process,Queue
 import numpy as np
 import geraHist
@@ -44,7 +62,8 @@ class Amostra(Process):
                             self.entrada['L'],
                             self.entrada['A'],
                             self.entrada['t0'],
-                            self.entrada['p'])
+                            self.entrada['q'],
+                            self.entrada['clusterlimite'])
         self.resultado=analisaHist.histogram(hist,
                                        self.entrada['L'],
                                        self.entrada['t0'],
@@ -71,9 +90,9 @@ if __name__ == "__main__":
             entrada['A']=1
             entrada['t0']=2.05
             entrada['numeroPontos']=50
-            entrada['p']=0
-            entrada['sementeAleatoria']=1
+            entrada['q']=0
             entrada['raio']=0.3
+            entrada['clusterlimite']=50
             amostras=[]
             fila=Queue()
             for i in range(0,5):
