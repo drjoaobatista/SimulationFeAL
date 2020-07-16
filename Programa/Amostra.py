@@ -56,7 +56,7 @@ class Amostra(Process):
 
     def simula(self):
         self.inicio = time.time()
-        self.resultado = vt.vtbcc( self.entrada['L'],
+        self.resultado, self.cofiguracao = vt.vtbcc( self.entrada['L'],
                                        self.entrada['relaxacao'],
                                        self.entrada['mcs'],
                                        self.entrada['mcsTroca'],
