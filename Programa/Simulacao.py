@@ -6,41 +6,40 @@ import psutil
 import time
 
 class Simulacao(object):
+    
     def __init__(self, parametros):
         self.cpu=multiprocessing.cpu_count() #psutil.cpu_count()
         self.parametros=parametros
+    
     def __call__(self):
-        cont=0
         fila=Queue()
         amostras=[]
         cont=0
         for parametro in self.parametros:
             amostra=Amostra(fila, parametro)
             amostras.append(amostra)
-            cont+=1
             amostra.start()
-            print(cont, self.cpu)
-            while (cont>=self.cpu):
+            time.sleep(1)
+            cpu=psutil.cpu_percent()
+            print("cpu %",cpu)
+            cont+=1
+            while ( cpu>=70) :
+                print("... esperando")
+                while fila.empty():
+                    pass
+                saida= fila.get()
                 cont-=1
-                esperar=amostras[cont]
-                print("... esperando" , cont)
-                esperar.join()
-                saida= esperar.fila.get()
                 Event('fimAmostra', saida)
-        
-        while cont > 0:
+                print(psutil.cpu_percent())
+
+        while (cont >0):
+            print("... esperando")
+            while fila.empty():
+                pass
+            saida= fila.get()
             cont-=1
-            print("... esperando",cont)
-            espere=amostras[cont]
-            espere.join()
-            print("... fim",cont)
-            saida= espere.fila.get()
             Event('fimAmostra', saida)
         
-
-
-
-
 #----------------------- teste
 
 if __name__ == '__main__':
@@ -67,7 +66,6 @@ if __name__ == '__main__':
             entrada['numeroPontos']=50
             entrada['concentracao']=[0, 0.1]
             entrada['t0']=[2.05, 1.9]
-            entrada['sementeAleatoria']=1
             entrada['numeroAmostras']=4
             entrada['raio']=0.2
             entrada['fileNome']=self.fileNome

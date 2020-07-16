@@ -1,18 +1,21 @@
 !  Copyright 2014 Joao Batista dos Santos Filho <joao@jbsantosfilho.com>
-
-subroutine BCC(hist, MCx, MCc,L, A,t0,p)
+! f2py3 -c geraHist.f90 -m geraHist
+subroutine BCC(hist, desordem, MCx, MCc,L, A,t0)
     implicit none
     save  
     !saidas
     real(8), intent(out),dimension(0:Mcc-1,0:3):: hist
+    
     !f2py intent(out) :: hist       
     !entradas 
-    integer, intent(in)::L, MCx, MCc ! para que tamanho de agloreado exixte j2
-    !f2py intent(in) ::L, MCx, MCc
-
-    real(8), intent(in)::A,t0, p   !p=0 sistema puro
-    !f2py intent(in) :: A,t0, p
+    integer, intent(in),dimension(0:(2*L*L*L-1))::desordem
+    !f2py intent(in) :: desordem       
     
+    integer, intent(in)::L, MCx, MCc ! para que tamanho de agloreado exixte j2
+    
+    !f2py intent(in) ::L, MCx, MCc
+    real(8), intent(in)::A,t0 
+    !f2py intent(in) :: A,t0
     type :: Spin
         double precision, dimension(1:3) :: s
         integer :: s2
@@ -293,15 +296,15 @@ subroutine BCC(hist, MCx, MCc,L, A,t0,p)
         ligacao=1
         do i=0, sistema%numeroSitios-1
             if(rede(i)%s2==0)then
-                ligacao(0,vizinhos(0,i))=A
-                ligacao(1,vizinhos(1,i))=A
-                ligacao(2,vizinhos(2,i))=A
-                ligacao(3,vizinhos(3,i))=A
+                ligacao(0,vizinhos(0,i))=real(A)
+                ligacao(1,vizinhos(1,i))=real(A)
+                ligacao(2,vizinhos(2,i))=real(A)
+                ligacao(3,vizinhos(3,i))=real(A)
        
-                ligacao(0,vizinhos(4 , vizinhos(4,i) ))=A
-                ligacao(1,vizinhos(5 , vizinhos(5,i) ))=A
-                ligacao(2,vizinhos(6 , vizinhos(6,i) ))=A
-                ligacao(3,vizinhos(7 , vizinhos(7,i) ))=A                       
+                ligacao(0,vizinhos(4 , vizinhos(4,i) ))=real(A)
+                ligacao(1,vizinhos(5 , vizinhos(5,i) ))=real(A)
+                ligacao(2,vizinhos(6 , vizinhos(6,i) ))=real(A)
+                ligacao(3,vizinhos(7 , vizinhos(7,i) ))=real(A)                       
            end if       
          end do
        ! apaga exesso de ligações 
@@ -383,14 +386,13 @@ end subroutine marcarVizinhos
 
 Subroutine diluir
     !Variaveis Locais
-    integer :: numeroVacancias
     integer :: i
-
-    NumeroVacancias = int(sistema%numeroSitios*p)
-    rede(0:NumeroVacancias-1) = Spin((/0,0,0/),0)
-    rede(NumeroVacancias:sistema%numeroSitios-1) = Spin((/1,0,0/),1)
-    do i=1,100 
-        call Shuffle(rede)
+    do i=0,sistema%numeroSitios-1 
+        if (desordem(i)==0) then
+            rede(i) = Spin((/0,0,0/),0)
+        else
+            rede(i) = Spin((/1,0,0/),1)
+        end if
     end do 
    
 end subroutine diluir
@@ -451,24 +453,7 @@ function direcao()!Marsaglia(rand)
     direcao%S2 = 1
 end function direcao !Marsaglia
 
-!-----------------------------------------------------------------------------
-!The Knuth shuffle is used to create a random permutation of an array.
-subroutine Shuffle(vetor)
-    
-    !Variaveis mudas 
-    type(Spin), dimension(:), intent(inout) :: vetor    
-    !Variaveis Locais
-    integer :: i, posicao
-    type(Spin) :: temp
-    
-    do i = size(vetor), 2, -1
-        call random_number(rando)
-        posicao = int(rando * i) + 1
-        temp = vetor(posicao)
-        vetor(posicao) = vetor(i)
-        vetor(i) = temp
-    end do
-end subroutine Shuffle
+
 
 !----------------------------------------------------------------------------- 
 SUBROUTINE init_random_seed()
