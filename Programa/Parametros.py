@@ -41,20 +41,16 @@ class Parametros(Observer, threading.Thread):
 
 
     def __iter__(self):
-        chaves=['relaxacaoHistograma','mcsHistograma','A','B','numeroPontos','raio','mcsTroca']
+        chaves=['relaxacao','mcs','mcsTroca','A','B','tInicio','tFinal','numeroPontos']
         config={}
         for chave in chaves:
             config[chave] = self.entrada.get(chave)
         for L in self.entrada["tamanhos"]:
             for self.amostraSimulada in range(self.entrada["numeroAmostras"]):
-                for t0, q in zip(self.entrada['t0'], self.entrada['concentracao']):
+                for  q in zip(self.entrada['concentracao']):
                     config["L"]=L
                     config["q"]=q
-                    config["t0"]=t0
                     yield config
-
-
-
 
 
 #--------
@@ -63,16 +59,20 @@ if __name__ == "__main__":
     from Observador import  Event
     class TesteParametros(unittest.TestCase):
         def test(self):#testando atualizacao de dados por eventos 
-            entrada={}
+            entrada={}    
+            entrada['tInicio']=10
+            entrada['tFinal']=0.1
+            entrada['numeroPontos']=30
+            entrada['q']=0.1
             entrada["numeroAmostras"]=5
             entrada['tamanhos']=[5]
-            entrada['relaxacaoHistograma']=100000
-            entrada['mcsHistograma']=100000
-            entrada['numeroPontos']=50
+            entrada['relaxacao']=10
+            entrada['mcs']=10
+            entrada['mcsTroca']=1
+            entrada['numeroPontos']=20
             entrada['concentracao']=[0, 0.1]
-            entrada['t0']=[2.09, 1.8]
-            entrada['A']=1
-            entrada['raio']=1
+            entrada['A']=1.7
+            entrada['B']=-1
             parametros=Parametros(entrada=entrada)
             parametros.observe('teste', parametros.update)
             dados={}
@@ -82,17 +82,20 @@ if __name__ == "__main__":
             self.assertEqual(2, (parametros.entrada['t0'])[(parametros.entrada['concentracao']).index(0.1)])
            
         def test1(self):
-            entrada={}
+            entrada={}    
+            entrada['tInicio']=10
+            entrada['tFinal']=0.1
+            entrada['numeroPontos']=30
+            entrada['q']=0.1
             entrada["numeroAmostras"]=5
             entrada['tamanhos']=[5]
-            entrada['relaxacaoHistograma']=100000
-            entrada['mcsHistograma']=100000
-            entrada['numeroPontos']=50
+            entrada['relaxacao']=10
+            entrada['mcs']=10
+            entrada['mcsTroca']=1
+            entrada['numeroPontos']=20
             entrada['concentracao']=[0, 0.1]
-            entrada['t0']=[2.09, 1.8]
-            entrada['A']=1
-            entrada['sementeAleatoria']=1
-            entrada['raio']=1
+            entrada['A']=1.7
+            entrada['B']=-1
             parametros=Parametros(entrada=entrada)
             parametros.salvarJsonDisco()
             a=len(entrada['concentracao'])
@@ -104,16 +107,20 @@ if __name__ == "__main__":
             self.assertEqual(a*b, cont)
 
         def test2(self):
-            entrada={}
-            entrada["numeroAmostras"]=55
+            entrada={}    
+            entrada['tInicio']=10
+            entrada['tFinal']=0.1
+            entrada['numeroPontos']=30
+            entrada['q']=0.1
+            entrada["numeroAmostras"]=5
             entrada['tamanhos']=[5]
-            entrada['relaxacaoHistograma']=100000
-            entrada['mcsHistograma']=100000
-
-            entrada['numeroPontos']=50
-            entrada['concentracao']=[0, 0.05]
-            entrada['t0']=[2.09, 1.8]
-            entrada['raio']=1
+            entrada['relaxacao']=10
+            entrada['mcs']=10
+            entrada['mcsTroca']=1
+            entrada['numeroPontos']=20
+            entrada['concentracao']=[0, 0.1]
+            entrada['A']=1.7
+            entrada['B']=-1
             parametros=Parametros(entrada=entrada)
             a=len(parametros.entrada['concentracao'])
             b=parametros.entrada["numeroAmostras"]

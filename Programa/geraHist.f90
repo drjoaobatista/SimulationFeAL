@@ -7,7 +7,7 @@ subroutine BCC(hist, parametroOrdem, MCx, MCc, Mct, L, A, B, t0, q)
     save  
     !saidas
     real(8), intent(out),dimension(0:Mcc-1,0:3):: hist
-    !f2py intent(out) :: hist                               
+    !f2py intent(out) :: hist       
     real(8), intent(out),dimension(0:Mct-1):: parametroOrdem
     !f2py intent(out) :: parametroOrdem       
     !entradas 
@@ -60,9 +60,7 @@ subroutine BCC(hist, parametroOrdem, MCx, MCc, Mct, L, A, B, t0, q)
     integer :: passo, passo2
 
     call lerDados()  
-    !Abrindo arquivos 
-    open(2,file = 'hist.dat')
-   
+      
     !inicilização das variaveis 
     allocate(rede(0:sistema%numeroSitios-1))
     allocate(zeros(0:int(sistema%numeroSitios*q)-1))
@@ -84,10 +82,9 @@ subroutine BCC(hist, parametroOrdem, MCx, MCc, Mct, L, A, B, t0, q)
             call wolff
             call superrelaxacao
         end do 
-        parametroOrdem(passo2)=ordemA()
         call trocaAlFe    
     end do
-                                            S
+    
     !repetições para media
     do passo2=0, MCt-1
         do passo = 0, int(MCc/MCt)-1
@@ -99,7 +96,8 @@ subroutine BCC(hist, parametroOrdem, MCx, MCc, Mct, L, A, B, t0, q)
             hist(passo,2)=quantidadesTermodinamicas%Magnetizacao(2)/sistema%numeroSitios
             hist(passo,3)=quantidadesTermodinamicas%Magnetizacao(3)/sistema%numeroSitios
         end do 
-        !call trocaAlFe    
+        parametroOrdem(passo2)=ordemA()
+        call trocaAlFe    
     end do
     
     !fim do programa 
@@ -408,33 +406,7 @@ subroutine marcarVizinhos !rede bcc ok
         END DO
     END DO
      
-!segundos vizinhos
-    DO k = 0 , L-1
-        DO j = 0 , L-1
-            DO i = 0 , L-1
-            !subrede Amarela
-                site =             i      + j*L      +  k*L2     !sitio amarelo      
 
-                vizinhos2(0,site) = ant(i) + j*L +  k*L2    
-                vizinhos2(1,site) = i      + ant(j)*L +  k*L2    
-                vizinhos2(2,site) = i      + j*L      +  ant(k)*L2    
-                
-                vizinhos2(3,site) = suc(i) +  j*L      +  k*L2    
-                vizinhos2(4,site) = i  +    suc(j)*L   +  k*L2  
-                vizinhos2(5,site) = i  +      j*L      +   suc(k)*L2  
-            
-            !subrede Vermelha 
-                site             = i      + j*L      +  k*L2     +   L3  !sitio Vermelho
-                vizinhos2(0,site) = ant(i) + j*L +  k*L2    +   L3
-                vizinhos2(1,site) = i      + ant(j)*L +  k*L2    +   L3
-                vizinhos2(2,site) = i      + j*L      +  ant(k)*L2    +   L3
-                
-                vizinhos2(3,site) = suc(i) +  j*L      +  k*L2    +   L3
-                vizinhos2(4,site) = i  +    suc(j)*L   +  k*L2   +   L3
-                vizinhos2(5,site) = i  +      j*L      +   suc(k)*L2  +   L3
-            END DO
-        END DO
-    END DO
 
 end subroutine marcarVizinhos
 

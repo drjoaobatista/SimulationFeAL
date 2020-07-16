@@ -19,6 +19,7 @@ __status__ = "beta"
 
 from multiprocessing import Process,Queue
 import numpy as np
+import vt
 import geraHist
 import analisaHist
 import time
@@ -32,47 +33,40 @@ class Amostra(Process):
     def preparaSaida(self):
         VectResultado = np.array(self.resultado)
         self.saida={}
-        self.saida["t"]=VectResultado.transpose()[0] #melhorar isso
-        self.saida["mag"]=np.nan_to_num(VectResultado.transpose()[1])
-        self.saida["mag2"]=np.nan_to_num(VectResultado.transpose()[2])
-        self.saida["logmag2"]=np.nan_to_num(VectResultado.transpose()[3])
-        self.saida["energia"]=np.nan_to_num(VectResultado.transpose()[4])
-        self.saida["calor"]=np.nan_to_num(VectResultado.transpose()[5])
-        self.saida["sus"]=np.nan_to_num(VectResultado.transpose()[6])
-        self.saida["cumu"]=np.nan_to_num(VectResultado.transpose()[7])
-        self.saida["cumuE"]=np.nan_to_num(VectResultado.transpose()[8])
-        self.saida["tc"]=(self.saida["t"])[self.saida["sus"].argmax()]
-        self.saida["t"]=(self.saida["t"]).tolist()
-        self.saida["mag"]=(self.saida["mag"]).tolist()
-        self.saida["mag2"]=(self.saida["mag2"]).tolist()
-        self.saida["logmag2"]=(self.saida["logmag2"]).tolist()
-        self.saida["energia"]=(self.saida["energia"]).tolist()
-        self.saida["calor"]=(self.saida["calor"]).tolist()
-        self.saida["sus"]=(self.saida["sus"]).tolist()
-        self.saida["cumu"]=(self.saida["cumu"]).tolist()
-        self.saida["cumuE"]=(self.saida["cumuE"]).tolist()
-        self.saida["parametroOrdem"]=(self.parametroOrdem).tolist()
+        self.saida["t"]=VectResultado.transpose()[0].tolist() #melhorar isso
+        self.saida["sus"]=np.nan_to_num(VectResultado.transpose()[1]).tolist()
+        self.saida["calor"]=np.nan_to_num(VectResultado.transpose()[2]).tolist()
+        self.saida["cumu"]=np.nan_to_num(VectResultado.transpose()[3]).tolist()
+        self.saida["mag"]=np.nan_to_num(VectResultado.transpose()[4]).tolist()
+        self.saida["energia"]=np.nan_to_num(VectResultado.transpose()[5]).tolist()
+        self.saida["ordemB"]=np.nan_to_num(VectResultado.transpose()[6]).tolist()
+        self.saida["susOrdemB"]=np.nan_to_num(VectResultado.transpose()[7]).tolist()
         self.saida["duracao"]=time.time() - self.inicio
+        self.saida["tc"]=float(self.tc)
         self.saida.update(self.entrada)
+
+    def encontraTc(self,t='n', sus=None, cumo=None):
+        if isinstance(t, str):
+            VectResultado = np.array(self.resultado)
+            t = VectResultado.transpose()[0]
+            sus = np.nan_to_num(VectResultado.transpose()[1])
+            self.tc = t[sus.argmax()]
+        else:
+            self.tc = t[sus.argmax()]
 
     def simula(self):
         self.inicio = time.time()
-        self.tin=max(self.entrada['t0'] - self.entrada["raio"], 0.01)
-        self.tfi=self.entrada['t0'] + self.entrada["raio"]
-        hist, self.parametroOrdem=geraHist.bcc( self.entrada['relaxacaoHistograma'],
-                            self.entrada['mcsHistograma'],
-                            self.entrada['mcsTroca'],
-                            self.entrada['L'],
-                            self.entrada['A'],
-                            self.entrada['B'],
-                            self.entrada['t0'],
-                            self.entrada['q'],)
-        self.resultado=analisaHist.histogram(hist,
-                                       self.entrada['L'],
-                                       self.entrada['t0'],
-                                       self.tin,
-                                       self.tfi,
+        self.resultado = vt.vtbcc( self.entrada['L'],
+                                       self.entrada['relaxacao'],
+                                       self.entrada['mcs'],
+                                       self.entrada['mcsTroca'],
+                                       self.entrada['A'],
+                                       self.entrada['B'],
+                                       self.entrada['q'],
+                                       self.entrada['tInicio'],
+                                       self.entrada['tFinal'],
                                        self.entrada['numeroPontos'])
+        self.encontraTc()
         self.preparaSaida()
         return  self.saida
     def run(self):
@@ -88,15 +82,15 @@ if __name__ == "__main__":
         def test(self):
             entrada={}
             entrada['L']=5
-            entrada['relaxacaoHistograma']=100000
-            entrada['mcsHistograma']=100000
-            entrada['mcsTroca']=1000
-            entrada['A']=1
-            entrada['B']=-0.5
-            entrada['t0']=2.05
-            entrada['numeroPontos']=50
-            entrada['q']=0.05
-            entrada['raio']=0.3
+            entrada['relaxacao']=5000
+            entrada['mcs']=10000
+            entrada['mcsTroca']=100
+            entrada['A']=1.7
+            entrada['B']=-1
+            entrada['tInicio']=10
+            entrada['tFinal']=0.1
+            entrada['numeroPontos']=30
+            entrada['q']=0.2
             amostras=[]
             fila=Queue()
             for i in range(0,5):
@@ -105,15 +99,22 @@ if __name__ == "__main__":
                 amostra.start()
             p=js.grace()
             p2=js.grace()
-            p.yaxis(label='y',charsize=1.50)
+            p3=js.grace()
+            p.yaxis(label='sus',charsize=1.50)
             p.xaxis(label='x',charsize=1.50)
-            p2.yaxis(label='y',charsize=1.50)
+            p2.yaxis(label='calor',charsize=1.50)
             p2.xaxis(label='x',charsize=1.50)
+            p3.yaxis(label='ordem',charsize=1.50)
+            p3.xaxis(label='x',charsize=1.50)
             for amostra in amostras:
                 amostra.join()
                 saida= amostra.fila.get()
-                self.assertLessEqual(abs(saida['tc']-2.05), 0.2)
-                self.assertEqual(len(saida['t']),entrada['numeroPontos'])
+                #print(saida.get('t'),saida.get('sus'))
                 p.plot(saida.get('t'),saida.get('sus'),symbol=-1,line=[1,1,''],legend='Q=$q')
-                p2.plot(list(range(entrada['mcsTroca'])),saida.get("parametroOrdem"),symbol=-1,line=[1,1,''],legend='Q=$q')
+                p2.plot(saida.get('t'),saida.get('calor'),symbol=-1,line=[1,1,''],legend='Q=$q')
+                p3.plot(saida.get('t'),saida.get('ordemB'),symbol=-1,line=[1,1,''],legend='Q=$q')
+                p3.plot(saida.get('t'),saida.get('susOrdemB'),symbol=-1,line=[1,1,''],legend='Q=$q')
+                #self.assertLessEqual(abs(saida['tc']-2.05), 0.2)
+                #self.assertEqual(len(saida['t']),entrada['numeroPontos'])
+               
     unittest.main()
