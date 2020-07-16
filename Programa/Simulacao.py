@@ -69,6 +69,7 @@ if __name__ == '__main__':
             entrada['t0']=[2.05, 1.9]
             entrada['sementeAleatoria']=1
             entrada['numeroAmostras']=4
+            entrada['cluster']=30
             entrada['raio']=0.2
             entrada['fileNome']=self.fileNome
             parametros=Parametros(entrada=entrada)

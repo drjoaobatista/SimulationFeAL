@@ -1,3 +1,4 @@
+!f2py3 -c geraHist.f90 -m geraHist
 !  Copyright 2014 Joao Batista dos Santos Filho <joao@jbsantosfilho.com>
 
 subroutine BCC(hist, MCx, MCc,L, A,t0,p)
@@ -302,8 +303,8 @@ subroutine BCC(hist, MCx, MCc,L, A,t0,p)
                 ligacao(1,vizinhos(5 , vizinhos(5,i) ))=A
                 ligacao(2,vizinhos(6 , vizinhos(6,i) ))=A
                 ligacao(3,vizinhos(7 , vizinhos(7,i) ))=A                       
-           end if       
-         end do
+            end if       
+        end do
        ! apaga exesso de ligações 
         do i=0,sistema%numeroSitios-1
             if(rede(i)%S2==0 )then
@@ -359,8 +360,6 @@ subroutine marcarVizinhos !rede bcc ok
                 vizinhos(6,site) = i      + j*L      +  ant(k)*L2  +  L3!Vermelho  ok
                 vizinhos(7,site) = i      + ant(j)*L +  ant(k)*L2  +  L3!verde ok
             
-
-
             !subrede Vermelha 
                 site             = i      + j*L      +  k*L2     +   L3  !sitio Vermelho
                 vizinhos(0,site) = suc(i) + suc(j)*L +  suc(k)*L2   !azul ok
@@ -378,23 +377,54 @@ subroutine marcarVizinhos !rede bcc ok
     END DO
      
 end subroutine marcarVizinhos
+!------------------------------------------------------------------------------
+function  agrupamento(j)
+    integer :: agrupamento 
+    integer, intent(in) :: j
+    integer i, v, topoDaPilha, n
+    integer, dimension(0:sistema%numeroSitios-1) :: pilhaInt
+    integer, dimension(0:sistema%numeroSitios-1) :: marcacao
+    marcacao=0
+    n=0
+    topoDaPilha=1
+    pilhaInt(topoDaPilha)=j
+    do while (topoDaPilha>0)
+         i=pilhaInt(topoDaPilha)
+         topoDaPilha=topoDaPilha-1
+         do v=0 , sistema%numeroCoordenacao-1 
+            if ((rede(vizinhos(v,i))%s2==0).AND.(marcacao(vizinhos(v,i))==0)) then
+                marcacao(vizinhos(v,i))=-1
+                n=n+1
+                topoDaPilha=topoDaPilha+1
+                pilhaInt(topoDaPilha)=vizinhos(v,i)
+            end if
+        end do
+    end do
+    agrupamento = n
+
+end  function  agrupamento
 
 !-----------------------------------------------------------------------------
-
 Subroutine diluir
     !Variaveis Locais
     integer :: numeroVacancias
-    integer :: i
-
+    integer :: i, cont
     NumeroVacancias = int(sistema%numeroSitios*p)
-    rede(0:NumeroVacancias-1) = Spin((/0,0,0/),0)
-    rede(NumeroVacancias:sistema%numeroSitios-1) = Spin((/1,0,0/),1)
-    do i=1,100 
-        call Shuffle(rede)
-    end do 
-   
-end subroutine diluir
-
+    rede(0:sistema%numeroSitios-1) = Spin((/1,0,0/),1)
+    cont=0
+    do while(cont<NumeroVacancias)
+        call random_number(rando)
+        i=int(sistema%numeroSitios*rando)
+        if (rede(i)%s2==1) then
+            call random_number(rando)
+            write(*,*) (1.0d0/(1.0d0 + exp(real(SomaVizinhosAl(i))*10)))
+            if (rando<(1.0d0/(1.0d0 + exp(real(SomaVizinhosAl(i))*10)))) then
+                rede(i) = Spin((/0,0,0/),0)
+                cont=cont+1
+            end if
+        end if
+    end do
+end subroutine diluir 
 !-----------------------------------------------------------------------------
 
 subroutine lerDados()
@@ -427,6 +457,17 @@ function campo(i)
 end function campo    
  
 
+function SomaVizinhosAl(i)
+    !Variaveis mudas 
+    integer :: SomaVizinhosAl
+    integer, intent(in) :: i 
+    !variaveis locais
+    integer :: j   
+    SomaVizinhosAl=sistema%numeroCoordenacao 
+    do j = 0, sistema%numeroCoordenacao-1
+        SomaVizinhosAl= SomaVizinhosAl - (rede(vizinhos(j,i))%s2)
+    end do
+end function SomaVizinhosAl
 !-----------------------------------------------------------------------------
 
 function direcao()!Marsaglia(rand)
@@ -469,6 +510,49 @@ subroutine Shuffle(vetor)
         vetor(i) = temp
     end do
 end subroutine Shuffle
+
+!-----------------------------------------------------------------------------
+subroutine insertdel(T_)
+    !Variaveis mudas
+    real, intent(in) :: T_
+
+    !Variaveis Locais
+    type(Spin) :: spinNovo, spinTemp
+    type(Spin) :: campo_
+    integer :: i, j_, k_, k0
+    real:: deltaE,EJ,EA,ED
+    real:: A, D
+    double precision :: probabilidade
+    A= 1
+    D= 1
+    k0 = sistema%numeroSitios*Rando + 1 !baseado no programa velho s�o sei se o gerador diferente pode prejudicar o resultado
+    spinNovo=rede(k0)
+    do i=1, sistema%numeroSitios
+        call random_number(Rando)
+        k_ = sistema%numeroSitios*Rando + 1 !baseado no programa velho s�o sei se o gerador diferente pode prejudicar o resultad
+        if (rede(k_)%s2==(1-spinNovo%s2))then
+            EJ = -(spinNovo%S(1)*campo_%S(1) +spinNovo%S(2)*campo_%S(2))
+            EA = -A*spinNovo%S2*campo_%S2
+            ED =  D*spinNovo%S2
+            deltaE= EJ+ EA + ED  ! enrgia final - energia inicial , energia inicial =0
+            probabilidade = 1.0d0/(1.0d0 + exp(deltaE/T_))
+            call random_number(rando)
+            if (rando <= probabilidade ) then
+                spintemp=rede(K_)
+                rede(K_) = SpinNovo
+                SpinNovo=spintemp
+                !quantidadesTermodinamicas%energiaJ = quantidadesTermodinamicas%energiaJ + EJ
+                !quantidadesTermodinamicas%energiaA = quantidadesTermodinamicas%energiaA + EA
+                !quantidadesTermodinamicas%energiaD = quantidadesTermodinamicas%energiaD + ED
+                !quantidadesTermodinamicas%energia = quantidadesTermodinamicas%energia + deltaE
+            end if
+        end if
+    end do
+    rede(k0)=spinNovo
+end Subroutine insertdel
+
+!---------------------------------------------------------------------------------------------------
+
 
 !----------------------------------------------------------------------------- 
 SUBROUTINE init_random_seed()

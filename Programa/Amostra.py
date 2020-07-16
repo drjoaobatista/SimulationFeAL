@@ -22,6 +22,7 @@ class Amostra(Process):
         self.saida["sus"]=np.nan_to_num(VectResultado.transpose()[6])
         self.saida["cumu"]=np.nan_to_num(VectResultado.transpose()[7])
         self.saida["cumuE"]=np.nan_to_num(VectResultado.transpose()[8])
+        
         self.saida["tc"]=(self.saida["t"])[self.saida["sus"].argmax()]
         self.saida["t"]=(self.saida["t"]).tolist()
         self.saida["mag"]=(self.saida["mag"]).tolist()

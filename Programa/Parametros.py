@@ -39,7 +39,6 @@ class Parametros(Observer, threading.Thread):
     def lerParametrosFiribase(self):
         pass
 
-
     def __iter__(self):
         chaves=['relaxacaoHistograma','mcsHistograma','A','numeroPontos','raio']
         config={}
@@ -78,7 +77,6 @@ if __name__ == "__main__":
             entrada['raio']=1
             parametros=Parametros(entrada=entrada)
             parametros.observe('teste', parametros.update)
-           
             dados={}
             dados['p']=0.1
             dados['tc']=2

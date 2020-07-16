@@ -28,41 +28,42 @@ class Salvar(Observer, threading.Thread):
 
 
 #----------------------- teste
-import os
-import unittest
-from Observador import  Event
-class TesteSalvar(unittest.TestCase):
-    def test(self):
-        self.fileNome='teste.json'
-        try:
-            os.remove(self.fileNome)
-        except:
-            pass
-        salvar = Salvar(fileNome=self.fileNome)
-        salvar.observe('teste', salvar)
-        for i in range(5):
-            Event('teste',  {"t":i,"t2":i*i,"t3":[i,i*i]})
-        with open(self.fileNome, mode='r') as json_file:
-            for linha in json_file:
-                a=json.loads(linha)
-                self.assertEqual(a['t']*a['t'], a['t2'])
-                self.assertIn(a['t'], a['t3'])
-                self.assertIn(a['t2'], a['t3'])
-
-    def test2(self):
-        self.fileNome='teste.json'
-        try:
-            os.remove(self.fileNome)
-        except:
-            pass
-        salvar = Salvar(fileNome=self.fileNome)
-        salvar.observe('teste', salvar)
-        Event('teste',  {"t":"testeOk"})
-        with open(self.fileNome, mode='r') as json_file:
-            for linha in json_file:
-                a=json.loads(linha)
-                self.assertEqual(a["t"],"testeOk")
-
 if __name__ == '__main__':
+    import os
+    import unittest
+    from Observador import  Event
+    class TesteSalvar(unittest.TestCase):
+        def test(self):
+            self.fileNome='teste.json'
+            try:
+                os.remove(self.fileNome)
+            except:
+                pass
+            salvar = Salvar(fileNome=self.fileNome)
+            salvar.observe('teste', salvar)
+            for i in range(5):
+                Event('teste',  {"t":i,"t2":i*i,"t3":[i,i*i]})
+            with open(self.fileNome, mode='r') as json_file:
+                for linha in json_file:
+                    a=json.loads(linha)
+                    self.assertEqual(a['t']*a['t'], a['t2'])
+                    self.assertIn(a['t'], a['t3'])
+                    self.assertIn(a['t2'], a['t3'])
+
+        def test2(self):
+            self.fileNome='teste.json'
+            try:
+                os.remove(self.fileNome)
+            except:
+                pass
+            salvar = Salvar(fileNome=self.fileNome)
+            salvar.observe('teste', salvar)
+            Event('teste',  {"t":"testeOk"})
+            with open(self.fileNome, mode='r') as json_file:
+                for linha in json_file:
+                    a=json.loads(linha)
+                    self.assertEqual(a["t"],"testeOk")
     unittest.main()
+
+
 
