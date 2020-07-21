@@ -41,8 +41,10 @@ class Amostra(Process):
         self.saida["energia"]=np.nan_to_num(VectResultado.transpose()[5]).tolist()
         self.saida["ordemB"]=np.nan_to_num(VectResultado.transpose()[6]).tolist()
         self.saida["susOrdemB"]=np.nan_to_num(VectResultado.transpose()[7]).tolist()
+        self.saida["qq"]=np.nan_to_num(VectResultado.transpose()[8]).tolist()
         self.saida["duracao"]=time.time() - self.inicio
         self.saida["tc"]=float(self.tc)
+        self.saida["AmostraC"]=self.amostraConfig
         self.saida.update(self.entrada)
 
     def encontraTc(self,t='n', sus=None, cumo=None):
@@ -56,13 +58,14 @@ class Amostra(Process):
 
     def simula(self):
         self.inicio = time.time()
-        self.resultado, self.cofiguracao = vt.vtbcc( self.entrada['L'],
+        self.resultado,self.amostraConfig = vt.vtbcc( self.entrada['L'],
                                        self.entrada['relaxacao'],
                                        self.entrada['mcs'],
                                        self.entrada['mcsTroca'],
                                        self.entrada['A'],
                                        self.entrada['B'],
-                                       self.entrada['q'],
+                                       self.entrada['C'],
+                                       self.entrada['D'],
                                        self.entrada['tInicio'],
                                        self.entrada['tFinal'],
                                        self.entrada['numeroPontos'])
@@ -86,11 +89,12 @@ if __name__ == "__main__":
             entrada['mcs']=10000
             entrada['mcsTroca']=100
             entrada['A']=1.7
-            entrada['B']=-1
+            entrada['B']=-0.1
+            entrada['C']=5
+            entrada['D']=0
             entrada['tInicio']=10
             entrada['tFinal']=0.1
             entrada['numeroPontos']=30
-            entrada['q']=0.2
             amostras=[]
             fila=Queue()
             for i in range(0,5):
@@ -101,19 +105,18 @@ if __name__ == "__main__":
             p2=js.grace()
             p3=js.grace()
             p.yaxis(label='sus',charsize=1.50)
-            p.xaxis(label='x',charsize=1.50)
+            p.xaxis(label='t',charsize=1.50)
             p2.yaxis(label='calor',charsize=1.50)
-            p2.xaxis(label='x',charsize=1.50)
-            p3.yaxis(label='ordem',charsize=1.50)
-            p3.xaxis(label='x',charsize=1.50)
+            p2.xaxis(label='t',charsize=1.50)
+            p3.yaxis(label='q',charsize=1.50)
+            p3.xaxis(label='t',charsize=1.50)
             for amostra in amostras:
                 amostra.join()
-                saida= amostra.fila.get()
-                #print(saida.get('t'),saida.get('sus'))
+                saida= amostra.fila.get()                  
                 p.plot(saida.get('t'),saida.get('sus'),symbol=-1,line=[1,1,''],legend='Q=$q')
                 p2.plot(saida.get('t'),saida.get('calor'),symbol=-1,line=[1,1,''],legend='Q=$q')
-                p3.plot(saida.get('t'),saida.get('ordemB'),symbol=-1,line=[1,1,''],legend='Q=$q')
-                p3.plot(saida.get('t'),saida.get('susOrdemB'),symbol=-1,line=[1,1,''],legend='Q=$q')
+                p3.plot(saida.get('t'),saida.get('qq'),symbol=-1,line=[1,1,''],legend='Q=$q')
+            #    p3.plot(saida.get('t'),saida.get('susOrdemB'),symbol=-1,line=[1,1,''],legend='Q=$q')
                 #self.assertLessEqual(abs(saida['tc']-2.05), 0.2)
                 #self.assertEqual(len(saida['t']),entrada['numeroPontos'])
                

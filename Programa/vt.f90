@@ -2,24 +2,28 @@
 !#DONE: colocar abs na staggeredMag, deu errado corrigindo colocando ABS na media 
 !#DONE: Trocar o nome do parametro staggeredMag staggered magnetization
 
-subroutine  vtBCC(resultado, amostra, L, MCx, MCc, MCt, A, B, q, tini,tfi, npontos)
+subroutine  vtBCC(resultado, amostra, L, MCx, MCc, MCt, A, B, C,D, tini,tfi, npontos)
     implicit none
     !saidas
-    real(4), intent(out),dimension(0:npontos-1,0:7):: resultado
+    real(8), intent(out),dimension(0:npontos-1,0:8):: resultado
     !f2py intent(out) :: resultado       
-    real(4), intent(out),dimension(0:2*L*L*L-1, 0:2) :: amostra
-    !f2py intent(out) :: amostra       
+    real(8), intent(out),dimension(0:2*L*L*L-1, 0:3):: amostra
+    !f2py intent(out) :: resultado       
     !entradas 
-    integer, intent(in):: L, MCx, MCc, MCt, nPontos
-    !f2py intent(in) :: L, MCx, MCc, MCt, npontos   
-    real(4), intent(in):: A, B, tini, tfi, q    !q=0 sistema puro
-    !f2py intent(in) :: A, B, tini, tfi, q
-
+    integer, intent(in)::L, MCx, MCc, MCt, nPontos!
+    !f2py intent(in) : MCt, :L,   MCx, MC, npontos   
+    real(8), intent(in):: A, B, C, D, tini,tfi    !=0 sistema puro
+    !f2py intent(in) :: A, B, tin,tfin, q
+    type :: Spin
+        real, dimension(1:3) :: s !mudei de double precision para real 
+        integer :: s2
+    end type Spin
+    
     type :: Quantidades
-        real,dimension(0:2) :: magnetizacao !magnetização instantanea
-        real :: energia !Energia instantanea
-        real :: energia2 !Energia instantanea
-        real :: staggeredMag !Energia instantanea
+        double precision,dimension(1:3) :: magnetizacao !magnetização instantanea
+        double precision :: energia !Energia instantanea
+        double precision :: energia2 !Energia instantanea
+        double precision :: staggeredMag !Energia instantanea
     end type Quantidades
 
     type :: Configuracao
@@ -32,80 +36,87 @@ subroutine  vtBCC(resultado, amostra, L, MCx, MCc, MCt, A, B, q, tini,tfi, npont
         integer :: numeroVacancias
     end type Configuracao
    
-
+    type :: Disco  !usado para construir a pilha 
+         double precision::prod
+         integer::site
+    end type Disco
 
 !Variaveis Locais
 
     intrinsic random_seed, random_number
-    real, dimension(0:2*L*L*L-1,0:2) :: rede
-    integer , dimension(0:2*L*L*L-1) :: rede2
-    integer, dimension(0:7, 0:2*L*L*L-1) :: vizinhos
-    real, dimension(0:7, 0:2*L*L*L-1):: ligacao, ligacao2
-
-    integer, dimension(0:2*L*L*L-1):: pilhaI
-    real, dimension(0:2*L*L*L-1):: pilhaP
+    type(Spin), dimension(:), allocatable :: rede
+    type(Disco), dimension(:), allocatable :: pilha
     type(Quantidades) :: quantidadesTermodinamicas
     type(Configuracao) :: sistema 
-    integer,  dimension(0:int(2*L*L*L*q)-1) ::  zeros
-    real, dimension(0:2) :: campoEfetivo0
+    integer, dimension(:,:), allocatable :: vizinhos
+    real, dimension(:,:), allocatable :: ligacao, ligacao2
+    integer,  dimension(:), allocatable ::  zeros
+    real, dimension(1:3) :: campoEfetivo0
     real :: rando
     integer :: passo, passo2, contt
     real :: tin, dt, t0
 
-    real  :: somaMag, somaMag2, somaMag4, somaEne, somaEne2, somaEne4,  somaStaggeredMag, somaStaggeredMag2
-    real  :: mediaMag, mediaMag2, mediaMag4, mediaEne, mediaEne2, mediaEne4, susceptibilidade, cumuM, calor
-    real  :: mediaStaggeredMag, mediaStaggeredMag2, susStaggeredMag
-    real  :: aux
+    double precision :: somaq,somaMag, somaMag2, somaMag4, somaEne, somaEne2, somaEne4,  somaStaggeredMag, somaStaggeredMag2
+    double precision  :: mediaq,mediaMag, mediaMag2, mediaMag4, mediaEne, mediaEne2, mediaEne4, susceptibilidade, cumuM, calor
+    double precision  :: mediaStaggeredMag,mediaStaggeredMag2, susStaggeredMag
+    double precision  :: qq
 !------------------------------------------------
     
     call lerDados()
+
     !inicilização das variaveis 
+    allocate(rede(0:sistema%numeroSitios-1))
+    allocate(zeros(0:int(sistema%numeroSitios)-1))
+    allocate(pilha(1:sistema%numeroSitios)) !usa no wollf e precisa comecar do 1
+    allocate(vizinhos(0:sistema%numeroCoordenacao-1, 0:sistema%numeroSitios-1))
+    allocate(ligacao(0:sistema%numeroCoordenacao-1, 0:sistema%numeroSitios-1))
+
+
     tin=max(tini, 0.1)
     dt=(tfi-tin)/nPontos
     resultado=0
     call init_random_seed()   
     ! call random_seed(PUT=seed)
     call marcarVizinhos
-    call diluir !gera amostra 
+    !call diluir !gera amostra 
+    rede = Spin((/1,0,0/),1)
     call marcaLigacao     
     call inicializar
     t0 = tin
+    qq=0
     do contT = 0 , nPontos-1
         call iniciaVariaveis
         !repetiÃ§Ãµes termalizaÃ§Ã£o
         do passo2=0, MCt-1
-            do passo = 0, int(MCx/MCt)-1
                 call metropolis
                 call wolff
                 call superrelaxacao
-            end do 
-            call trocaAlFe    
+                call trocaAlFe  
         end do
     !repetições para media
         do passo2=0, MCt-1
-            do passo = 0, int(MCc/MCt)-1
                 call metropolis
                 call wolff
                 call superrelaxacao
                 call calcularSoma
-            end do 
-            call trocaAlFe  
-            aux=quantidadesTermodinamicas%staggeredMag/sistema%numeroSitios 
-            somaStaggeredMag=somaStaggeredMag + aux
-            somaStaggeredMag2=somaStaggeredMag2 + aux*aux
+                call trocaAlFe  
         end do
         call calcularMedia
         t0=t0+dt
         end do
-        amostra = rede         
-        
-
+        do passo = 0, sistema%numeroSitios-1
+            amostra(passo,0) = rede(passo)%s(0)         
+            amostra(passo,1) = rede(passo)%s(1)         
+            amostra(passo,2) = rede(passo)%s(2)         
+            amostra(passo,3) = rede(passo)%s2         
+        end do
     
 CONTAINS
 subroutine calcularMedia
     integer  ::numeroSitios
     numeroSitios = 2*L**3
     mediaMag =  somaMag/MCc
+    mediaq=somaq/MCc
     mediaMag2 = somaMag2/MCc
     mediaMag4 = somaMag4/MCc
     mediaEne =  somaEne/MCc
@@ -126,12 +137,18 @@ subroutine calcularMedia
          resultado(contT,5)= mediaEne
          resultado(contT,6)= abs(mediaStaggeredMag)
          resultado(contT,7)= susStaggeredMag
+         resultado(contT,8)= mediaq
+         WRITE(*,*) mediaq, t0
     end if
 end subroutine calcularMedia
 !-----------------------------------------------------------------------------
 subroutine calcularSoma
-    real ::mag, mag2, mag4, ene,ene2, ene4
-    mag2= sum(quantidadesTermodinamicas%magnetizacao*quantidadesTermodinamicas%magnetizacao)    
+    double precision ::mag, mag2, mag4, ene,ene2, ene4
+    INTEGER:: i
+    mag2=0
+    do i = 1, 3
+        mag2=mag2 + quantidadesTermodinamicas%magnetizacao(i)*quantidadesTermodinamicas%magnetizacao(i)    
+    end do
     mag2=mag2/sistema%numeroSitios/sistema%numeroSitios
     mag=sqrt(mag2)
     mag4=mag2*mag2
@@ -144,6 +161,8 @@ subroutine calcularSoma
     somaEne=somaEne+ene
     somaEne2=somaEne2+ene2
     somaEne4=somaEne4+ene4
+    somaq=somaq+qq
+   
 end subroutine calcularSoma
 
 subroutine iniciaVariaveis
@@ -155,33 +174,34 @@ subroutine iniciaVariaveis
     somaEne4=0
     somaStaggeredMag=0
     somaStaggeredMag2=0
+    somaq=0
 end subroutine iniciaVariaveis
 
 subroutine metropolis      
     !Variaveis Locais
-    real, dimension(0:2) :: spinNovo
-    real, dimension(0:2) :: campoEfetivo
+    type(Spin) :: spinNovo
+    type(Spin) :: campoEfetivo
     integer :: i, j
-    real :: deltaE 
-    real :: probabilidade
+    double precision :: deltaE 
+    double precision :: probabilidade
     
     do i=0, sistema%numeroSitios-1
-        if (rede2(i)==1)then
+        if (rede(i)%s2==1)then
             SpinNovo = direcao()
             deltaE = 0
             campoEfetivo =campo(i)
-            do j = 0, 2  
-                deltaE = deltaE - (spinNovo(j) - rede(i, j))*campoEfetivo(j)           
+            do j = 1, 3  !mudando 2 > 3
+                deltaE = deltaE - (spinNovo%S(j) - rede(i)%S(j))*campoEfetivo%S(j)           
             end do   
-            probabilidade = 1.00/real(1.0d0 + exp(deltaE/T0))
+            probabilidade = 1.0d0/(1.0d0 + exp(deltaE/T0))
             call random_number(rando)
             if (rando <= probabilidade ) then 
                 !aceita a nova configura��o
-                forall  (j = 0:2)
+                forall  (j = 1:3)
                     quantidadesTermodinamicas%Magnetizacao(j) = &
-                    &quantidadesTermodinamicas%Magnetizacao(j) + (spinNovo(j) - rede(i,j))
+                    &quantidadesTermodinamicas%Magnetizacao(j) + (spinNovo%S(j) - rede(i)%S(j))
                 end forall
-                rede(i,:) = SpinNovo
+                rede(i) = SpinNovo
                 quantidadesTermodinamicas%energia = quantidadesTermodinamicas%energia+deltaE   
             end if
         end if    
@@ -190,70 +210,104 @@ end Subroutine metropolis
 !-----------------------------------------------------------------------------
 
 subroutine wolff !ok
-    real, dimension(0:2) :: direcaoSemente
-    real, dimension(0:2) :: projecao
-    real, dimension(0:2) :: projecaoVizinho
-    real, dimension(0:2) :: campoEfetivo  
+    type(Spin) :: direcaoSemente
+    type(Spin) :: projecao
+    type(Spin) :: projecaoVizinho
+    type(Spin) :: campoEfetivo  
     real :: produto
     real :: produtoSemente
     real :: produtoVizinho
     real :: produtoSitio
     real :: probabilidade
     real :: deltaE
-    integer ::viz
+    integer ::viz, j
     integer :: semente, ponteiro, sitio, sitioVizinho
     real :: JJ
     !inicia ponteiros do cluster 
     ponteiro = 0 !diferente do programa velho porque eu incremento l� na frente 
+
+
     !sorteia sitio semente 
     do 
         call random_number(Rando)  
         semente = int(sistema%numeroSitios*Rando)  !baseado no programa velho s�o sei se o gerador diferente pode prejudicar o resultado 
-        if (Rede2(semente)==1) exit
+        if (Rede(semente)%S2==1) exit
     end do
+   
     direcaoSemente = direcao()
-    produto =  sum(direcaoSemente*rede(semente,:))
+    produto = direcaoSemente%S(1)*rede(semente)%S(1) &
+              & + direcaoSemente%S(2)*rede(semente)%S(2)&
+              & + direcaoSemente%S(3)*rede(semente)%S(3)
     produtoSemente = produto
-    projecao = direcaoSemente*produto !calcula projeção da semente na direção semente 
-    rede(semente,:) = rede(semente,:) - 2.00*projecao       !flipa semente
-    campoefetivo = campo(semente) !Atualiza Energia e magnetização do sistema 
-    deltaE = 2.00*sum(projecao*campoefetivo)
-    quantidadesTermodinamicas%Energia = quantidadesTermodinamicas%Energia  + deltaE
-    quantidadesTermodinamicas%Magnetizacao = quantidadesTermodinamicas%Magnetizacao -2.00*Projecao
     
+    !calcula proje��o da semente na dire��o semente 
+    forall  (j = 1:3)
+        projecao%S(j) = direcaoSemente%S(j)*produto
+    end forall
+
+    !flipa semente
+    forall  (j = 1:3)
+        rede(semente)%S(j) = rede(semente)%S(j) - 2.0d0*projecao%S(j)
+    end forall
+    !Atualiza Energia e magnetização do sistema 
+    campoefetivo = campo(semente)
+    deltaE = 2.0d0*(projecao%S(1)*campoefetivo%S(1) + projecao%S(2)*campoefetivo%S(2)+projecao%S(3)*campoefetivo%S(3)) 
+    quantidadesTermodinamicas%Energia = quantidadesTermodinamicas%Energia  + deltaE
+    forall  (j = 1:3)
+        quantidadesTermodinamicas%Magnetizacao(j) = quantidadesTermodinamicas%Magnetizacao(j) -2.0d0*Projecao%S(j)
+    end forall
     !incrementa TamanhoCluster e cresce a pilha
     ponteiro = ponteiro + 1
-    pilhaI(ponteiro) = semente
-    pilhaP(ponteiro) = produtoSemente
+    pilha(ponteiro)%site = semente
+    pilha(ponteiro)%prod = produtoSemente
     
     !repetições na pilha 
     do while(ponteiro>0)
         !decrementa a pilha
-        sitio = pilhaI(ponteiro)
-        produtoSitio = pilhaP(ponteiro)
+        sitio = pilha(ponteiro)%site
+        produtoSitio = pilha(ponteiro)%prod
         ponteiro = ponteiro - 1
         !repetições nos vizinhos 
         do viz = 0, sistema%numeroCoordenacao -1
             sitioVizinho = Vizinhos(viz,sitio) !o primeiro marca o vizinhos e segundo marca o s�tio
+            JJ=ligacao(viz,sitio)
             !se o vizinhos do sitio form magnetico continua 
-            if (rede2(sitioVizinho)==1) then
-                ProdutoVizinho = sum(rede(sitioVizinho,:)*DirecaoSemente)
-                !se o vizinhos está na mesma direção da semente
+            if (rede(sitioVizinho)%S2==1) then
+                ProdutoVizinho = rede(sitioVizinho)%S(1)*DirecaoSemente%S(1) + &
+                               & rede(sitioVizinho)%S(2)*DirecaoSemente%S(2) + &
+                               & rede(sitioVizinho)%S(3)*DirecaoSemente%S(3)
+                !se o vizinhos est� na mesma dire��o da semente
                 if (ProdutoVizinho*ProdutoSemente>0) then
-                    JJ=ligacao(viz,sitio)
-                    probabilidade=1-exp(-2.00*JJ*ProdutoSitio*ProdutoVizinho/T0) 
+                    probabilidade=1-exp(-2.0d0*JJ*ProdutoSitio*ProdutoVizinho/T0) 
                     call random_number(Rando)
-                    if (Rando<probabilidade) then                   
-                        ProjecaoVizinho=produtoVizinho*DirecaoSemente !calcula projeção
-                        rede(sitioVizinho,:) = rede(sitioVizinho,:) - 2.00*projecaoVizinho !flipa o spin
+                    if (Rando<probabilidade) then
+                        !aqui pode ser otimizado com forall
+                        
+                        !calcula proje��o
+                        forall  (j = 1:3)
+                            ProjecaoVizinho%S(j)=produtoVizinho*DirecaoSemente%S(j)
+                        end forall
+                        !flipa o spin
+
+                        forall  (j = 1:3)
+                            rede(sitioVizinho)%S(j) = rede(sitioVizinho)%S(j) - 2.0d0*projecaoVizinho%S(j)
+                        end forall
+                        
+                        !Atualiza Energia e magnetização do sistema 
                         campoefetivo = campo(sitioVizinho)
-                        deltaE = 2.00*Sum(ProjecaoVizinho*Campoefetivo)
-                        quantidadesTermodinamicas%energia = quantidadesTermodinamicas%Energia  + deltaE !Atualiza Energia e magnetização do sistema 
-                        quantidadesTermodinamicas%magnetizacao=quantidadesTermodinamicas%magnetizacao - 2.00*projecaoVizinho
+                        deltaE = 2.0d0*(ProjecaoVizinho%S(1)*Campoefetivo%S(1) + &
+                                      & ProjecaoVizinho%S(2)*campoefetivo%S(2) + &
+                                      & ProjecaoVizinho%S(3)*campoefetivo%S(3)) 
+                        quantidadesTermodinamicas%energia = quantidadesTermodinamicas%Energia  + deltaE
+                        
+                        forall  (j = 1:3)
+                            quantidadesTermodinamicas%magnetizacao(j) = &
+                            &quantidadesTermodinamicas%magnetizacao(j) - 2.0d0*projecaoVizinho%S(j)
+                        end forall
                         ponteiro = ponteiro + 1
-                        pilhaI(ponteiro) = sitioVizinho
-                        pilhaP(ponteiro) = produtoVizinho
-                    end if 
+                        pilha(ponteiro)%site = sitioVizinho
+                        pilha(ponteiro)%prod = produtoVizinho
+                   end if 
                 end if    
             end if 
         end do  !repetições nos vizinhos 
@@ -262,24 +316,39 @@ end subroutine wolff
 !-----------------------------------------------------------------------------
 
 Subroutine superrelaxacao !ok
-    integer :: i, j
-    real, dimension(0:2):: campoEfetivo, versorCampoEfetivo, novoSpin, projecao
-    real :: moduloProjecao, moduloCampoEfetivo
+    !variaveis Locais
+    integer :: i, j, k
+    type(spin) :: campoEfetivo, versorCampoEfetivo, novoSpin, projecao
+    double precision :: moduloProjecao, moduloCampoEfetivo
     do i = 0 , sistema%numeroSitios-1
         call random_number(Rando)  
         j = int((sistema%numeroSitios)*Rando) !rever
-        if (Rede2(j)==1) then
+        if (Rede(j)%S2==1) then
             CampoEfetivo = campo(j)
-            moduloCampoEfetivo = sqrt(sum(campoEfetivo*campoEfetivo))             
-            versorCampoEfetivo = campoEfetivo/moduloCampoEfetivo
-            moduloProjecao = sum(versorCampoEfetivo*Rede(j,:))
-            projecao = moduloProjecao*versorCampoEfetivo
-            novoSpin = -Rede(j,:) + 2*projecao
-            quantidadesTermodinamicas%magnetizacao = quantidadesTermodinamicas%magnetizacao + novoSpin - Rede(j,:)
-            rede(j,:) = novoSpin
+            moduloCampoEfetivo = sqrt( campoEfetivo%S(1)*campoEfetivo%S(1) + &
+                                         & campoEfetivo%S(2)*campoEfetivo%S(2) + &
+                                         & campoEfetivo%S(3)*campoEfetivo%S(3))
+            if (moduloCampoEfetivo>0) then             
+                forall  (k = 1:3)
+                    versorCampoEfetivo%S(k) = campoEfetivo%S(k)/moduloCampoEfetivo
+                end forall
+                
+                moduloProjecao = versorCampoEfetivo%S(1)*Rede(j)%S(1) + &
+                               & versorCampoEfetivo%S(2)*rede(j)%S(2) + &
+                               & versorCampoEfetivo%S(3)*rede(j)%S(3)
+                forall (K=1:3)
+                    projecao%S(k) = moduloProjecao*versorCampoEfetivo%S(k)
+                    novoSpin%S(k) = - Rede(j)%S(k) + 2*projecao%S(k)
+                    quantidadesTermodinamicas%magnetizacao(K) = quantidadesTermodinamicas%magnetizacao(K)&
+                                                              & + novoSpin%S(K) - Rede(j)%S(K)
+                    rede(j)%S(k) = novoSpin%S(K)
+                end forall
+            end if
         end if
     end do   
+
 End Subroutine Superrelaxacao
+
 
 !-----------------------------------------------------------------------------
 
@@ -288,46 +357,33 @@ subroutine Inicializar
     integer :: j
     quantidadesTermodinamicas%energia=energia()
     quantidadesTermodinamicas%energia2=energia2()
-    forall  (j=0:2)
-        quantidadesTermodinamicas%magnetizacao(j) = sum(rede(:,j))
+    forall  (j=1:3)
+        quantidadesTermodinamicas%magnetizacao(j) = sum(rede(:)%S(j))
     end forall
-    quantidadesTermodinamicas%staggeredMag=2*(sum(rede2(0:L*L*L-1))-sum(rede2(L*L*L:2*L*L*L-1)))
+    quantidadesTermodinamicas%staggeredMag=2*(sum(rede(0:L*L*L-1)%S2)-sum(rede(L*L*L:2*L*L*L-1)%S2))
 end subroutine inicializar
 
 !---------------------------------------------
 subroutine marcaLigacao
     integer::  i
     ligacao=1
-    ! do i=0, sistema%numeroSitios-1
-    !     if (rede2(i)==0) then
-    !         ligacao(0,vizinhos(0,i)) = ligacao(0,vizinhos(0,i)) +1
-    !         ligacao(1,vizinhos(1,i)) = ligacao(1,vizinhos(1,i)) +1
-    !         ligacao(2,vizinhos(2,i)) = ligacao(2,vizinhos(2,i)) +1
-    !         ligacao(3,vizinhos(3,i)) = ligacao(3,vizinhos(3,i)) +1
+    do i=0, sistema%numeroSitios-1
+        if (rede(i)%s2==0) then
+            ligacao(0,vizinhos(0,i))=real(A)
+            ligacao(1,vizinhos(1,i))=real(A)
+            ligacao(2,vizinhos(2,i))=real(A)
+            ligacao(3,vizinhos(3,i))=real(A)
    
-    !         ligacao(0,vizinhos(4 , vizinhos(4,i) )) = ligacao(0,vizinhos(4 , vizinhos(4,i) )) +1
-    !         ligacao(1,vizinhos(5 , vizinhos(5,i) )) = ligacao(1,vizinhos(5 , vizinhos(5,i) )) +1
-    !         ligacao(2,vizinhos(6 , vizinhos(6,i) )) = ligacao(2,vizinhos(6 , vizinhos(6,i) )) +1
-    !         ligacao(3,vizinhos(7 , vizinhos(7,i) )) = ligacao(3,vizinhos(7 , vizinhos(7,i) )) +1
-    !    end if       
-    !  end do
-
-     do i=0, sistema%numeroSitios-1
-        if (rede2(i)==0) then
-            ligacao(0,vizinhos(0,i)) = A
-            ligacao(1,vizinhos(1,i)) = A
-            ligacao(2,vizinhos(2,i)) = A
-            ligacao(3,vizinhos(3,i)) = A
-   
-            ligacao(0,vizinhos(4 , vizinhos(4,i) )) = A
-            ligacao(1,vizinhos(5 , vizinhos(5,i) )) = A
-            ligacao(2,vizinhos(6 , vizinhos(6,i) )) = A
-            ligacao(3,vizinhos(7 , vizinhos(7,i) )) = A
+            ligacao(0,vizinhos(4 , vizinhos(4,i) ))=real(A)
+            ligacao(1,vizinhos(5 , vizinhos(5,i) ))=real(A)
+            ligacao(2,vizinhos(6 , vizinhos(6,i) ))=real(A)
+            ligacao(3,vizinhos(7 , vizinhos(7,i) ))=real(A)                       
        end if       
      end do
-    !apaga exesso de ligações 
+   
+     ! apaga exesso de ligações 
     do i=0,sistema%numeroSitios-1
-        if(rede2(i)==0 )then
+        if(rede(i)%S2==0 )then
             ligacao(0,i)=0
             ligacao(1,i)=0
             ligacao(2,i)=0
@@ -402,19 +458,17 @@ end subroutine marcarVizinhos
 Subroutine diluir
     !Variaveis Locais
     integer :: i,cont
-    rede(:,0) = 1
-    rede(:,1) = 0
-    rede(:,2) = 0
-    rede2(:) =  1
-    if (sistema%numeroVacancias>0 )then
-        rede2(0:sistema%numeroVacancias-1) =0
+    if ( b==0 ) then
+        rede(0:sistema%numeroSitios-1) = Spin((/1,0,0/),1)
+    else
+        rede(0:sistema%numeroVacancias-1) = Spin((/0,0,0/),0)
+        rede(sistema%numeroVacancias : sistema%numeroSitios-1) = Spin((/1,0,0/),1)
         do i=1,100 
-            call Shuffle(rede2)
+            call Shuffle(rede)
         end do 
         cont=0
-        do i=0, sistema%numeroSitios-1
-            if (rede2(i)==0 ) then
-                rede(i,0) = 0
+        do i=0 ,sistema%numeroSitios-1
+            if (rede(i)%S2==0 ) then
                 zeros(cont)=i 
                 cont=cont+1
             end if
@@ -430,37 +484,40 @@ subroutine lerDados()
     sistema%numeroTermalizacao=MCx
     sistema%numeroPassosMC=Mcc
     sistema%numeroSitios = 2*sistema%L*sistema%L*sistema%L 
-    sistema%numeroTentativas=int(sistema%numeroSitios*sistema%numeroCoordenacao*q)
-    sistema%numeroVacancias=int(sistema%numeroSitios*q)
+    sistema%numeroTentativas=int(sistema%numeroSitios*sistema%numeroCoordenacao)
+    sistema%numeroVacancias=int(sistema%numeroSitios)
 end subroutine LerDados
 
 !-----------------------------------------------------------------------------
 
 function campo(i)
     !Variaveis mudas 
-    real, dimension(0:2) :: campo 
+    type(Spin) :: campo 
     integer, intent(in) :: i 
     !variaveis locais
     integer :: j    
-    forall  (j = 0:2)
-          campo(j) =  rede(vizinhos(0,i),j)*ligacao(0,i) + &
-                    & rede(vizinhos(1,i),j)*ligacao(1,i) + &
-                    & rede(vizinhos(2,i),j)*ligacao(2,i) + &
-                    & rede(vizinhos(3,i),j)*ligacao(3,i) + &
-                    & rede(vizinhos(4,i),j)*ligacao(4,i) + &
-                    & rede(vizinhos(5,i),j)*ligacao(5,i) + &
-                     & rede(vizinhos(6,i),j)*ligacao(6,i) + &
-                    & rede(vizinhos(7,i),j)*ligacao(7,i)
+    forall  (j = 1:3)
+        campo%S(j) =  rede(vizinhos(0,i))%S(j)*ligacao(0,i) + &
+                    & rede(vizinhos(1,i))%S(j)*ligacao(1,i) + &
+                    & rede(vizinhos(2,i))%S(j)*ligacao(2,i) + &
+                    & rede(vizinhos(3,i))%S(j)*ligacao(3,i) + &
+                    & rede(vizinhos(4,i))%S(j)*ligacao(4,i) + &
+                    & rede(vizinhos(5,i))%S(j)*ligacao(5,i) + &
+                    & rede(vizinhos(6,i))%S(j)*ligacao(6,i) + &
+                    & rede(vizinhos(7,i))%S(j)*ligacao(7,i)
     end Forall
 end function campo    
+
 
 !-----------------------------------------------------------------------------
 
 function direcao()!Marsaglia(rand)
     !Variaveis mudas 
-    real, dimension(0:2) :: direcao
+    type(spin) :: direcao
+
     !variaveis locais
-    real :: auxiliar1, auxiliar2, auxiliar3, auxiliar4  
+    double precision :: auxiliar1, auxiliar2, auxiliar3, auxiliar4  
+
     do 
         call random_number(rando)
         auxiliar1 = 1- 2*rando
@@ -470,49 +527,59 @@ function direcao()!Marsaglia(rand)
         if (auxiliar3 <= 1) exit
     end do
     auxiliar4 = sqrt(1 - auxiliar3)
-    direcao(0) = 2*auxiliar1*auxiliar4
-    direcao(1) = 2*auxiliar2*auxiliar4
-    direcao(2) = 1 - 2*auxiliar3
-
+    direcao%S(1) = 2*auxiliar1*auxiliar4
+    direcao%S(2) = 2*auxiliar2*auxiliar4
+    direcao%S(3) = 1 - 2*auxiliar3
+    direcao%S2 = 1
 end function direcao !Marsaglia
 
 !-----------------------------------------------------------------------------
 subroutine trocaAlFe()
     implicit none
-    INTEGER i,k, j, cont
-    real::DeltaE2, E1
-    do cont=1, sistema%numeroTentativas
-        call random_number(rando)
-        k=int(rando*sistema%numeroVacancias)
-        i=zeros(k)
-        call random_number(rando)
-        j = vizinhos(int(rando*sistema%numeroCoordenacao),i)
-        if (rede2(j)==1) then
+    INTEGER j, cont
+    type(spin) auxS
+    real::E2, E1
+    do j=0, sistema%numeroSitios-1
+        if (rede(j)%S2==1) then
             Ligacao2=Ligacao
-            DeltaE2 =  B*( sum(rede2(vizinhos(:,i))) -sum(rede2(vizinhos(:,j))) -1)
-            rede(i,:)=rede(j,:)
-            rede2(i)=1
-            rede(j,:)=0.0
-            rede2(j)=0
+            auxS=rede(j)
+            rede(j)=Spin((/0,0,0/),0)
             call marcaLigacao
+            E2=Energia2()
             E1=Energia()
             call random_number(rando)
-            if (rando < exp(-( DeltaE2 + E1 - quantidadesTermodinamicas%energia)/t0)) then
+            if (rando< exp(-( E2 + E1 - quantidadesTermodinamicas%energia2 - quantidadesTermodinamicas%energia)/t0)) then
                 quantidadesTermodinamicas%energia=E1
-                quantidadesTermodinamicas%energia2=quantidadesTermodinamicas%energia2 + DeltaE2
-                if (i<L*L*L)then 
-                    quantidadesTermodinamicas%staggeredMag= quantidadesTermodinamicas%staggeredMag+4
+                quantidadesTermodinamicas%energia2=E2
+          
+                if (j<L*L*L )then 
+                    quantidadesTermodinamicas%staggeredMag= quantidadesTermodinamicas%staggeredMag+2
                 else
-                    quantidadesTermodinamicas%staggeredMag= quantidadesTermodinamicas%staggeredMag-4
+                    quantidadesTermodinamicas%staggeredMag= quantidadesTermodinamicas%staggeredMag-2
                 end if
-                zeros(k)=j
             else
-                rede(j,:)=rede(i, : )
-                rede2(j)=1
-                rede(i,:)=0
-                rede2(i)=0
+                rede(j)=auxS
                 Ligacao=Ligacao2
-            end if          
+            end if
+        else
+            Ligacao2=Ligacao
+            rede(j)=direcao()
+            call marcaLigacao
+            E2=Energia2()
+            E1=Energia()
+            call random_number(rando)
+            if (rando< exp(-( E2 + E1 - quantidadesTermodinamicas%energia2 - quantidadesTermodinamicas%energia)/t0)) then
+                quantidadesTermodinamicas%energia=E1
+                quantidadesTermodinamicas%energia2=E2
+                if (j<L*L*L )then 
+                    quantidadesTermodinamicas%staggeredMag= quantidadesTermodinamicas%staggeredMag+2
+                else
+                    quantidadesTermodinamicas%staggeredMag= quantidadesTermodinamicas%staggeredMag-2
+                end if
+            else
+                rede(j )=Spin((/0,0,0/),0)
+                Ligacao=Ligacao2
+            end if
         end if
     end do
 end subroutine trocaAlFe
@@ -524,14 +591,14 @@ function Energia()  !termo Magnetico
     integer :: i, j
     Energia=0
     do i = 0, sistema%numeroSitios -1
-        forall  (j = 0:2)
-        campoefetivo0(j) = (rede(vizinhos(0,i),j)*ligacao(0,i) + &
-                          & rede(vizinhos(1,i),j)*ligacao(1,i) + &
-                          & rede(vizinhos(2,i),j)*ligacao(2,i) + &
-                          & rede(vizinhos(3,i),j)*ligacao(3,i) )
+        forall  (j = 1:3)
+            campoefetivo0(j) = (rede(vizinhos(0,i))%S(j)*ligacao(0,i) + &
+                             & rede(vizinhos(1,i))%S(j)*ligacao(1,i) + &
+                             & rede(vizinhos(2,i))%S(j)*ligacao(2,i) + &
+                             & rede(vizinhos(3,i))%S(j)*ligacao(3,i) )
         end forall
-        do j= 0, 2
-            energia = energia - rede(i,j)*campoefetivo0(j)  
+        do j= 1, 3
+            energia = energia - rede(i)%S(j)*campoefetivo0(j)  
         end do
     end do 
 end function Energia
@@ -539,24 +606,34 @@ end function Energia
 !------------------------------------------------------------------------------
 function Energia2() !Termo quimico
     real:: Energia2
-    integer :: i
-    Energia2=0
+    integer :: i, aux1, aux2, aux3
+    aux1=0
+    aux2=0
+    aux3=0
     do i = 0, sistema%numeroSitios -1
-            energia2 = energia2 - rede2(i)*(rede2(vizinhos(0,i)) + &
-                                          & rede2(vizinhos(1,i)) + &
-                                          & rede2(vizinhos(2,i)) + &
-                                          & rede2(vizinhos(3,i)))
+        if ( rede(i)%s2==1  ) then
+            aux3 =aux3 - rede(i)%s2*(rede(vizinhos(0,i))%s2 + &
+                                    & rede(vizinhos(1,i))%s2 + &
+                                    & rede(vizinhos(2,i))%s2 + &
+                                    & rede(vizinhos(3,i))%s2)
+            aux1=aux1+1
+         else
+            aux2=aux2+1
+        end if
     end do
-    energia2=energia2*B
+    energia2= B*aux3 - C*aux1 - D*aux2 
+    qq=Float(aux2)/sistema%numeroSitios
+   
 end function Energia2
 
 !-----------------------------------------------------------------------------
 !The Knuth shuffle is used to create a random permutation of an array.
 subroutine Shuffle(vetor)
     !Variaveis mudas 
-    INTEGER, dimension(:), intent(inout) :: vetor    
+    type(Spin), dimension(:), intent(inout) :: vetor    
     !Variaveis Locais
-    integer :: i, posicao, temp
+    integer :: i, posicao
+    type(Spin) :: temp
 
     do i = size(vetor), 2, -1
         call random_number(rando)

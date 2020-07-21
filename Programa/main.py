@@ -7,7 +7,8 @@ from Salvar import Salvar
 from Apresentar import Apresentar
 from Parametros import Parametros
 if __name__ == '__main__':
-    enviar = Enviar(nomeRef='teste30-06b')
+    #enviar = Enviar(nomeRef='2020-06-15-diagramacompletoF')
+    enviar = Enviar(nomeRef='2020-07-05-diagramacompleto')
     descricao="testando o diagrama completo variando t e q lentamente buscando a fase B2 e a ordem desordem"
     #enviar(descricao) #TODO enviar as descrição 
     salvar=Salvar()
@@ -24,13 +25,11 @@ if __name__ == '__main__':
     entrada['tamanhos']=[5,10]
     entrada['relaxacao']=100000
     entrada['mcs']=100000
-    entrada['mcsTroca']=2000
-    entrada['concentracao']=[0.0] #, 0.1, 0.2, 0.22, 0.23, 0.24, 0.25, 0.3]
+    entrada['mcsTroca']=1000
+    entrada['concentracao']=[0.1, 0.2, 0.22, 0.23, 0.24, 0.25, 0.3]
     entrada['A']=1.7
-    entrada['B']=-1.1   
+    entrada['B']=-1   
+
     parametros=Parametros(entrada=entrada)
     simulacao=Simulacao(parametros=parametros)
     simulacao()
-
-
-
